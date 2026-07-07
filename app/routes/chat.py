@@ -1,15 +1,15 @@
 from fastapi import APIRouter
 
 from app.models.schemas import ChatRequest
-from app.services.gemini_service import generate_response
+from app.agents.planner import plan_task
 
 router = APIRouter()
 
 @router.post("/chat")
 def chat(request: ChatRequest):
-
-    answer = generate_response(request.prompt)
+    plan= plan_task(request.prompt)
 
     return {
-        "response": answer
+        "plan": plan
     }
+    
