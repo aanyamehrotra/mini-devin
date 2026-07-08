@@ -1,44 +1,57 @@
+import json
+from app.models.schemas import Plan
 from app.services.gemini_service import generate_response
 
 
-def plan_task(user_request: str):
+def plan_task(user_request: str) -> Plan :
     prompt = f"""
-You are the Planner Agent in an autonomous software engineering system.
+    You are the Planner Agent in an autonomous software engineering system.
 
-Your ONLY responsibility is planning.
+    Your ONLY responsibility is planning.
 
-DO NOT write code.
-DO NOT explain implementation details.
-DO NOT generate functions or classes.
+    DO NOT write code.
+    DO NOT explain implementation details.
 
-Given the user's request:
+    Given this request:
 
-{user_request}
+    {user_request}
 
-Return ONLY this structure:
+    Return ONLY valid JSON.
 
-Goal:
-...
+    The JSON must exactly follow this schema:
 
-Features:
-- ...
-- ...
-- ...
+    {{
+        "goal": "short project goal",
+        "features": [
+            "feature 1",
+            "feature 2"
+        ],
+        "files": [
+            "main.py"
+        ],
+        "technologies": [
+            "Python"
+        ],
+        "steps": [
+            "step 1",
+            "step 2",
+            "step 3"
+        ]
+    }}
 
-Files:
-- ...
-- ...
+    Return ONLY the JSON.
 
-Technologies:
-- ...
+    No markdown.
+    No explanation.
+    No backticks.
+    """
+    response = generate_response(prompt)
+    response = response.strip()
 
-Implementation Steps:
-1.
-2.
-3.
-4.
+    if response.startswith("```"):
+        response = response.replace("```json", "")
+        response = response.replace("```", "")
+        response = response.strip()
+    data = json.loads(response)
 
-Return plain text only.
-"""
-
-    return generate_response(prompt)
+    return Plan(**data)

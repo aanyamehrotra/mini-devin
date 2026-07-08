@@ -1,24 +1,31 @@
+from app.models.schemas import Plan
 from app.services.gemini_service import generate_response
 
-def generate_code(plan:str):
-    prompt=  f"""
-You are the Coder Agent in an autonomous software engineering system.
+def write_code(plan: Plan) -> str:
+    prompt = f"""
+You are an expert Python software engineer.
 
-Your ONLY responsibility is writing code.
+Your job is to implement the project described below.
 
-You will receive a project plan.
+Goal:
+{plan.goal}
 
-Plan:
+Features:
+{chr(10).join("- " + feature for feature in plan.features)}
 
-{plan}
+Files:
+{chr(10).join("- " + file for file in plan.files)}
 
-Rules:
+Implementation Steps:
+{chr(10).join(str(i+1)+". "+step for i, step in enumerate(plan.steps))}
 
-- Generate working code.
-- Do not explain the solution.
-- Do not include markdown.
-- Do not wrap code inside ``` blocks.
-- Return only the source code.
+Write complete, production-quality Python code.
+
+Return ONLY the code.
+
+Do not explain anything.
+
+Do not wrap it inside markdown.
 """
 
-    return generate_response(prompt)
+    return generate_response(prompt).strip()
