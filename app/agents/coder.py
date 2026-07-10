@@ -29,3 +29,40 @@ Do not wrap it inside markdown.
 """
 
     return generate_response(prompt).strip()
+
+def rewrite_code(
+    plan: Plan,
+    previous_code: str,
+    review: str,
+) -> str:
+    prompt = f"""
+You are an expert Python software engineer.
+
+The previous implementation failed review.
+
+Project Goal:
+{plan.goal}
+
+Required Features:
+{chr(10).join("- " + feature for feature in plan.features)}
+
+Previous Code:
+
+{previous_code}
+
+Reviewer Feedback:
+
+{review}
+
+Update the previous code.
+
+Fix ONLY the issues mentioned by the reviewer.
+
+Do not remove working functionality.
+
+Return ONLY the complete corrected Python code.
+
+No markdown.
+No explanation.
+"""
+    return generate_response(prompt).strip()
