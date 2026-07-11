@@ -14,7 +14,7 @@ def execute_code(code:str)-> ExecutionResult:
 
     try:
         result= subprocess.run(
-            ['python3', str(main_file)],
+            ["python3", "main.py"],
             capture_output=True,
             text=True,
             cwd=project,

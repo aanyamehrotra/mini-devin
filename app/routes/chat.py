@@ -12,25 +12,33 @@ router = APIRouter()
 @router.post("/chat")
 def chat(request: ChatRequest):
     plan= plan_task(request.prompt)
-    code = write_code(plan)
-    execution= execute_code(code)
-    review= review_code(plan,code,execution)
-    if review != "SUCCESS":
-        code = rewrite_code(
-            plan,
-            code,
-            review
-        )
-        execution = execute_code(code)
-        review = review_code(
-            plan,
-            code,
-            execution
-        )
+    attempts=[]
+    MAX_RETRIES = 3
+    for i in range(MAX_RETRIES):
+        if i == 0:
+            code = write_code(plan)
+        else:
+            code = rewrite_code(
+                plan,
+                code,
+                review
+            )
+        execution= execute_code(code)
+        review= review_code(plan,code,execution)
+        attempts.append({
+    "attempt": i+1,
+    "execution": execution,
+    "review": review,
+    "code":code,
+    "success": execution.success
+    })
+        if review == "SUCCESS":
+            break 
     return {
         "plan": plan,
         'code':code,
         'execution': execution,
-        'review': review 
+        'review': review,
+        "attempts":attempts
     }
     
