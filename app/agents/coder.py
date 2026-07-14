@@ -1,21 +1,16 @@
-from app.models.schemas import Plan
-from app.services.llm.factory import get_llm
 import json
 
-from app.models.schemas import (
-    Plan,
-    CodeResponse,
-)
+from app.models.schemas import Plan, CodeResponse
 from app.services.llm.factory import get_llm
 
-def write_code(plan: Plan) -> CodeResponse:
 
+def write_code(plan: Plan) -> CodeResponse:
     llm = get_llm()
 
     prompt = f"""
 You are an expert Python software engineer.
 
-Your task is to generate an entire software project.
+Your task is to generate a complete, executable software project.
 
 Goal:
 {plan.goal}
@@ -23,7 +18,7 @@ Goal:
 Features:
 {chr(10).join("- " + feature for feature in plan.features)}
 
-Files:
+Suggested Files:
 {chr(10).join("- " + file for file in plan.files)}
 
 Implementation Steps:
@@ -37,28 +32,46 @@ The JSON MUST exactly follow this schema:
   "files": [
     {{
       "path": "main.py",
-      "content": "print('Hello')"
+      "content": "..."
+    }},
+    {{
+      "path": "requirements.txt",
+      "content": "flask\\nrequests"
     }}
   ]
 }}
-IMPORTANT
 
-The generated program must run autonomously.
+Each object represents one file in the project.
 
-Do NOT use input().
+Dependency Rules:
 
-If values are needed, assign realistic sample values directly in variables.
+- If the project uses any external Python package (Flask, FastAPI, requests, pandas, numpy, matplotlib, sqlalchemy, etc.), you MUST generate a requirements.txt file.
+- requirements.txt must contain one package per line.
+- Do NOT include Python standard library modules.
+- If only the Python standard library is used, do NOT generate requirements.txt.
 
-The program must execute successfully without requiring any user interaction.
+Project Rules:
+
+- Always generate main.py as the project entry point.
+- Every file suggested above MUST appear.
+- You may generate additional files if needed to make the project complete.
+- Examples include requirements.txt, utils.py, models.py, config.py and README.md.
+- Every generated file must appear exactly once.
+
+Execution Rules:
+
+- The generated program must run autonomously.
+- Do NOT use input().
+- If values are needed, assign realistic sample values directly.
+- Do NOT install packages inside Python code.
+- Assume dependencies will be installed from requirements.txt.
 
 Rules:
 
-- Return ONLY JSON.
+- Return ONLY valid JSON.
 - No markdown.
 - No triple backticks.
 - No explanation.
-- Every file listed above MUST appear exactly once.
-- The content field must contain the complete file contents.
 """
 
     response = llm.generate(prompt).strip()
@@ -75,6 +88,7 @@ Rules:
     data = json.loads(response)
 
     return CodeResponse(**data)
+
 
 def rewrite_code(
     plan: Plan,
@@ -105,7 +119,7 @@ Reviewer Feedback:
 
 Return ONLY valid JSON.
 
-Use the exact same schema:
+Use this schema:
 
 {{
   "files": [
@@ -116,23 +130,27 @@ Use the exact same schema:
   ]
 }}
 
-IMPORTANT
+Execution Rules:
 
-The generated program must run autonomously.
+- The program must run autonomously.
+- Do NOT use input().
+- Assign sample values wherever needed.
+- Do NOT install packages inside Python code.
+- If external packages are required, include or update requirements.txt.
 
-Do NOT use input().
+Project Rules:
 
-If values are needed, assign realistic sample values directly in variables.
-
-The program must execute successfully without requiring any user interaction.
+- Keep every existing file unless the reviewer explicitly requests otherwise.
+- Fix only the issues mentioned by the reviewer.
+- Preserve files that are already correct.
+- You may add new files if required to make the project executable.
+- Always keep main.py as the entry point.
 
 Rules:
 
 - Return ONLY JSON.
 - No markdown.
 - No explanation.
-- Keep every existing file unless the reviewer explicitly asks to remove it.
-- Fix only the issues mentioned.
 """
 
     response = llm.generate(prompt).strip()

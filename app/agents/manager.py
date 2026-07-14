@@ -9,11 +9,8 @@ MAX_RETRIES = 3
 
 def run_agent(user_prompt: str):
     plan = plan_task(user_prompt)
-
     attempts = []
-
     for i in range(MAX_RETRIES):
-
         if i == 0:
             code = write_code(plan)
         else:
@@ -22,15 +19,24 @@ def run_agent(user_prompt: str):
                 code,
                 review
             )
-
+        print(f"\n========== Attempt {i+1} ==========")
+        print("Generating code...")
         execution = execute_code(code)
-
+        print("Execution Success:", execution.success)
+        if not execution.success:
+            print("Execution Error:")
+            print(execution.stderr)
         review = review_code(
             plan,
             code,
             execution
         )
-
+        print("Reviewer:")
+        print(review)
+        if review.strip().upper().startswith("SUCCESS"):
+            print("SUCCESS")
+        else:
+            print("Rewriting...")
         attempts.append({
             "attempt": i + 1,
             "code": code,
@@ -38,7 +44,6 @@ def run_agent(user_prompt: str):
             "review": review,
             "success": review.strip().upper().startswith("SUCCESS")
         })
-
         if review.strip().upper().startswith("SUCCESS"):
             break
 

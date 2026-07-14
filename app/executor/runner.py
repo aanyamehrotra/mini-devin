@@ -1,5 +1,7 @@
+import platform
 import subprocess
 import uuid
+import sys
 from pathlib import Path
 
 from app.models.schemas import CodeResponse, ExecutionResult
@@ -17,13 +19,50 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
         file_path.parent.mkdir(parents=True, exist_ok=True)
         file_path.write_text(file.content)
 
+    venv_dir = project_dir / "venv"
+
     try:
-        result = subprocess.run(
-            ["python3", "main.py"],
+
+        subprocess.run(
+            [sys.executable, "-m", "venv", str(venv_dir)],
+            check=True,
             capture_output=True,
             text=True,
-            cwd=project_dir,      # ✅ Fixed
-            timeout=5
+        )
+        print("venv exists:", venv_dir.exists())
+        print("contents:", list(project_dir.iterdir()))
+
+
+        if platform.system() == "Windows":
+            python_executable = (venv_dir / "bin" / "python.exe").resolve()
+        else:
+            python_executable =(venv_dir / "bin" / "python").resolve()
+        print("Python executable:", python_executable)
+        print("Exists:", python_executable.exists())
+        requirements_file = (project_dir / "requirements.txt").resolve()
+
+        if requirements_file.exists():
+            subprocess.run(
+                [
+                    str(python_executable),
+                    "-m",
+                    "pip",
+                    "install",
+                    "-r",
+                    str(requirements_file),
+                ],
+                cwd=project_dir,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+        result = subprocess.run(
+            [str(python_executable), "main.py"],
+            capture_output=True,
+            text=True,
+            cwd=project_dir,
+            timeout=5,
         )
 
         return ExecutionResult(
@@ -31,6 +70,14 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
             stdout=result.stdout,
             stderr=result.stderr,
             exit_code=result.returncode,
+        )
+
+    except subprocess.CalledProcessError as e:
+        return ExecutionResult(
+            success=False,
+            stdout=e.stdout or "",
+            stderr=e.stderr or str(e),
+            exit_code=e.returncode,
         )
 
     except subprocess.TimeoutExpired:
