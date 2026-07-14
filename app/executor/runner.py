@@ -56,14 +56,28 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
                 capture_output=True,
                 text=True,
             )
-
+        ENTRY_FILES = {"main.py", "app.py", "run.py", "server.py", "index.py"}
+        entry_path = None
+        for entry in ENTRY_FILES:
+            match = next(project_dir.rglob(entry), None)
+            if match:
+                entry_path = match.relative_to(project_dir)
+                break
+        
         result = subprocess.run(
-            [str(python_executable), "main.py"],
+            [str(python_executable), str(entry_path)],
             capture_output=True,
             text=True,
             cwd=project_dir,
             timeout=5,
         )
+        if entry_path is None:
+            return ExecutionResult(
+                success=False,
+                stdout="",
+                stderr="No executable entry point found (expected one of: main.py, app.py, run.py, server.py, index.py).",
+                exit_code=-1,
+            )
 
         return ExecutionResult(
             success=result.returncode == 0,
