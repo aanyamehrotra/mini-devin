@@ -41,6 +41,15 @@ The JSON MUST exactly follow this schema:
     }}
   ]
 }}
+IMPORTANT
+
+The generated program must run autonomously.
+
+Do NOT use input().
+
+If values are needed, assign realistic sample values directly in variables.
+
+The program must execute successfully without requiring any user interaction.
 
 Rules:
 
@@ -106,6 +115,16 @@ Use the exact same schema:
     }}
   ]
 }}
+
+IMPORTANT
+
+The generated program must run autonomously.
+
+Do NOT use input().
+
+If values are needed, assign realistic sample values directly in variables.
+
+The program must execute successfully without requiring any user interaction.
 
 Rules:
 
