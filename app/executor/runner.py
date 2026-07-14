@@ -63,7 +63,24 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
             if match:
                 entry_path = match.relative_to(project_dir)
                 break
-        
+        compile_result = subprocess.run(
+        [
+            str(python_executable),
+            "-m",
+            "py_compile",
+            str(entry_path),
+        ],
+        capture_output=True,
+        text=True,
+        cwd=project_dir,
+        )
+        if compile_result.returncode != 0:
+            return ExecutionResult(
+                success=False,
+                stdout="",
+                stderr=compile_result.stderr,
+                exit_code=compile_result.returncode,
+            )
         result = subprocess.run(
             [str(python_executable), str(entry_path)],
             capture_output=True,
