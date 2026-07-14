@@ -1,11 +1,21 @@
 from app.models.schemas import Plan
-from app.services.gemini_service import generate_response
+from app.services.llm.factory import get_llm
+import json
 
-def write_code(plan: Plan) -> str:
+from app.models.schemas import (
+    Plan,
+    CodeResponse,
+)
+from app.services.llm.factory import get_llm
+
+def write_code(plan: Plan) -> CodeResponse:
+
+    llm = get_llm()
+
     prompt = f"""
 You are an expert Python software engineer.
 
-Your job is to implement the project described below.
+Your task is to generate an entire software project.
 
 Goal:
 {plan.goal}
@@ -17,24 +27,54 @@ Files:
 {chr(10).join("- " + file for file in plan.files)}
 
 Implementation Steps:
-{chr(10).join(str(i+1)+". "+step for i, step in enumerate(plan.steps))}
+{chr(10).join(f"{i+1}. {step}" for i, step in enumerate(plan.steps))}
 
-Write complete, production-quality Python code.
+Return ONLY valid JSON.
 
-Return ONLY the code.
+The JSON MUST exactly follow this schema:
 
-Do not explain anything.
+{{
+  "files": [
+    {{
+      "path": "main.py",
+      "content": "print('Hello')"
+    }}
+  ]
+}}
 
-Do not wrap it inside markdown.
+Rules:
+
+- Return ONLY JSON.
+- No markdown.
+- No triple backticks.
+- No explanation.
+- Every file listed above MUST appear exactly once.
+- The content field must contain the complete file contents.
 """
 
-    return generate_response(prompt).strip()
+    response = llm.generate(prompt).strip()
+
+    if response.startswith("```"):
+        response = response.replace("```json", "")
+        response = response.replace("```", "")
+        response = response.strip()
+
+    start = response.find("{")
+    end = response.rfind("}") + 1
+    response = response[start:end]
+
+    data = json.loads(response)
+
+    return CodeResponse(**data)
 
 def rewrite_code(
     plan: Plan,
-    previous_code: str,
+    previous_code: CodeResponse,
     review: str,
-) -> str:
+) -> CodeResponse:
+
+    llm = get_llm()
+
     prompt = f"""
 You are an expert Python software engineer.
 
@@ -46,23 +86,47 @@ Project Goal:
 Required Features:
 {chr(10).join("- " + feature for feature in plan.features)}
 
-Previous Code:
+Current Project:
 
-{previous_code}
+{previous_code.model_dump_json(indent=2)}
 
 Reviewer Feedback:
 
 {review}
 
-Update the previous code.
+Return ONLY valid JSON.
 
-Fix ONLY the issues mentioned by the reviewer.
+Use the exact same schema:
 
-Do not remove working functionality.
+{{
+  "files": [
+    {{
+      "path": "main.py",
+      "content": "..."
+    }}
+  ]
+}}
 
-Return ONLY the complete corrected Python code.
+Rules:
 
-No markdown.
-No explanation.
+- Return ONLY JSON.
+- No markdown.
+- No explanation.
+- Keep every existing file unless the reviewer explicitly asks to remove it.
+- Fix only the issues mentioned.
 """
-    return generate_response(prompt).strip()
+
+    response = llm.generate(prompt).strip()
+
+    if response.startswith("```"):
+        response = response.replace("```json", "")
+        response = response.replace("```", "")
+        response = response.strip()
+
+    start = response.find("{")
+    end = response.rfind("}") + 1
+    response = response[start:end]
+
+    data = json.loads(response)
+
+    return CodeResponse(**data)

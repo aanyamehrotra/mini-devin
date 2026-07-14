@@ -1,9 +1,13 @@
 import json
+
 from app.models.schemas import Plan
-from app.services.gemini_service import generate_response
+from app.services.llm.factory import get_llm
 
 
-def plan_task(user_request: str) -> Plan :
+def plan_task(user_request: str) -> Plan:
+
+    llm = get_llm()
+
     prompt = f"""
     You are the Planner Agent in an autonomous software engineering system.
 
@@ -45,13 +49,19 @@ def plan_task(user_request: str) -> Plan :
     No explanation.
     No backticks.
     """
-    response = generate_response(prompt)
-    response = response.strip()
+
+    response = llm.generate(prompt).strip()
 
     if response.startswith("```"):
         response = response.replace("```json", "")
         response = response.replace("```", "")
         response = response.strip()
+
+    start = response.find("{")
+    end = response.rfind("}") + 1
+
+    response = response[start:end]
+
     data = json.loads(response)
 
     return Plan(**data)

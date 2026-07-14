@@ -1,12 +1,14 @@
-from app.models.schemas import Plan, ExecutionResult
-from app.services.gemini_service import generate_response
+from app.models.schemas import Plan, ExecutionResult, CodeResponse
+from app.services.llm.factory import get_llm
 
 
 def review_code(
     plan: Plan,
-    code: str,
+    code: CodeResponse,
     execution: ExecutionResult,
 ) -> str:
+    
+    llm=get_llm()
 
     prompt = f"""
 You are the Reviewer Agent in an autonomous coding system.
@@ -19,9 +21,9 @@ Project Goal:
 Required Features:
 {chr(10).join("- " + feature for feature in plan.features)}
 
-Generated Code:
+Generated Project:
 
-{code}
+{code.model_dump_json(indent=2)}
 
 Execution Result
 
@@ -50,4 +52,4 @@ Do NOT generate code.
 Return only the review.
 """
 
-    return generate_response(prompt).strip()
+    return llm.generate(prompt).strip()

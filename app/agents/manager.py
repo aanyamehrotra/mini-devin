@@ -36,10 +36,10 @@ def run_agent(user_prompt: str):
             "code": code,
             "execution": execution,
             "review": review,
-            "success": execution.success
+            "success": review.strip().upper().startswith("SUCCESS")
         })
 
-        if review == "SUCCESS":
+        if review.strip().upper().startswith("SUCCESS"):
             break
 
     return {

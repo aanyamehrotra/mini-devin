@@ -1,16 +1,18 @@
 import subprocess
 import uuid
 from pathlib import Path
-
+from app.models.schemas import CodeResponse
 from app.models.schemas import ExecutionResult
 
-def execute_code(code:str)-> ExecutionResult:
-    workspace= Path("workspace")
+def execute_code(project: CodeResponse) -> ExecutionResult:
+    workspace = Path("workspace")
     workspace.mkdir(exist_ok=True)
-    project= workspace/str(uuid.uuid4())
-    project.mkdir(parents=True, exist_ok=True)
-    main_file= project/"main.py" 
-    main_file.write_text(code)
+    project_dir = workspace / str(uuid.uuid4())
+    project_dir.mkdir(parents=True, exist_ok=True)
+    for file in project.files:
+        file_path = project_dir / file.path
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_text(file.content)
 
     try:
         result= subprocess.run(

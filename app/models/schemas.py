@@ -11,6 +11,13 @@ class Plan(BaseModel):
     technologies: List[str]
     steps: List[str]
 
+class GeneratedFile(BaseModel):
+    path: str
+    content: str
+
+class CodeResponse(BaseModel):
+    files: list[GeneratedFile]
+
 class ExecutionResult(BaseModel):
     success: bool
     stdout: str
