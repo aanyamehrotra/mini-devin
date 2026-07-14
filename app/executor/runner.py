@@ -2,12 +2,14 @@ import platform
 import subprocess
 import uuid
 import sys
+import time
 from pathlib import Path
 
 from app.models.schemas import CodeResponse, ExecutionResult
 
 
 def execute_code(project: CodeResponse) -> ExecutionResult:
+    start_time = time.perf_counter()
     workspace = Path("workspace")
     workspace.mkdir(exist_ok=True)
 
@@ -81,6 +83,7 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
                 stderr=compile_result.stderr,
                 exit_code=compile_result.returncode,
             )
+       
         result = subprocess.run(
             [str(python_executable), str(entry_path)],
             capture_output=True,
@@ -88,6 +91,7 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
             cwd=project_dir,
             timeout=5,
         )
+        execution_time = round(time.perf_counter() - start_time, 3)
         if entry_path is None:
             return ExecutionResult(
                 success=False,
@@ -132,4 +136,5 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
             stdout="",
             stderr=error,
             exit_code=-1,
+            execution_time=execution_time
         )
