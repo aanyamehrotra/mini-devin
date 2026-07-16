@@ -39,8 +39,6 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
 
         requirements_file = project_dir / "requirements.txt"
 
-        requirements_file = project_dir / "requirements.txt"
-
         if requirements_file.exists() and requirements_file.read_text().strip():
             subprocess.run(
                 [
@@ -113,13 +111,14 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
                         error_type="SyntaxError",
                     )
             execution_time = round(time.perf_counter() - start_time, 3)
+
             return ExecutionResult(
-                success=False,
-                stdout="",
-                stderr="No executable entry point found.",
-                exit_code=-1,
+                success=True,
+                stdout="All Python files compiled successfully. No executable entry point found; project validated as a module/library.",
+                stderr="",
+                exit_code=0,
                 execution_time=execution_time,
-                error_type="EntryPointError",
+                error_type=None,
             )
         compile_result = subprocess.run(
         [
