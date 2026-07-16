@@ -1,5 +1,6 @@
 from typing import List
 from pydantic import BaseModel
+from typing import Literal
 
 class ChatRequest(BaseModel):
     prompt: str
@@ -25,3 +26,12 @@ class ExecutionResult(BaseModel):
     exit_code: int
     execution_time: float
     error_type: str | None = None
+
+class ReviewResult(BaseModel):
+    success: bool
+    feedback: str
+    failure_source: Literal[
+        "code",
+        "execution_environment",
+        "requirements",
+    ] | None = None
