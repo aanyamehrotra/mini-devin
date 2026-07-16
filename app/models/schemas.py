@@ -24,3 +24,4 @@ class ExecutionResult(BaseModel):
     stderr: str
     exit_code: int
     execution_time: float
+    error_type: str | None = None

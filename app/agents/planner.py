@@ -42,9 +42,23 @@ def plan_task(user_request: str) -> Plan:
             "step 3"
         ]
     }}
+    CRITICAL RULES:
+    - Do not invent features or requirements that the user did not explicitly request.
+    - The generated program must be suitable for autonomous execution.
+    - Do not plan interactive terminal input using input().
+    - If values are needed and the user did not specify them, use realistic sample values.
+    - Only include features directly required to satisfy the user's request.
+        Return ONLY the JSON.
+    IMPORTANT:
+    Preserve all exact user-provided details in the plan, including literal strings,
+    numbers, filenames, technologies, constraints, and expected outputs.
 
-    Return ONLY the JSON.
+    Never replace a specific requirement with a generic description.
 
+    Example:
+    User: Print "Hello Mini Devin"
+    Correct feature: Print exactly "Hello Mini Devin"
+    Incorrect feature: Print a greeting message
     No markdown.
     No explanation.
     No backticks.

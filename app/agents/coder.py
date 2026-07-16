@@ -146,6 +146,12 @@ Project Rules:
 - You may add new files if required to make the project executable.
 - Always keep main.py as the entry point.
 
+IMPORTANT:
+The rewritten program must run autonomously.
+Never use input() or any other mechanism that waits for interactive stdin.
+If the reviewer requests interactive input, ignore that specific request and use realistic sample values instead.
+Preserve the user's actual requirements while fixing valid issues.
+
 Rules:
 
 - Return ONLY JSON.

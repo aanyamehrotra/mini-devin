@@ -31,19 +31,17 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
             capture_output=True,
             text=True,
         )
-        print("venv exists:", venv_dir.exists())
-        print("contents:", list(project_dir.iterdir()))
-
 
         if platform.system() == "Windows":
-            python_executable = (venv_dir / "bin" / "python.exe").resolve()
+            python_executable = (venv_dir / "Scripts" / "python.exe").resolve()
         else:
             python_executable =(venv_dir / "bin" / "python").resolve()
-        print("Python executable:", python_executable)
-        print("Exists:", python_executable.exists())
-        requirements_file = (project_dir / "requirements.txt").resolve()
 
-        if requirements_file.exists():
+        requirements_file = project_dir / "requirements.txt"
+
+        requirements_file = project_dir / "requirements.txt"
+
+        if requirements_file.exists() and requirements_file.read_text().strip():
             subprocess.run(
                 [
                     str(python_executable),
@@ -51,20 +49,78 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
                     "pip",
                     "install",
                     "-r",
-                    str(requirements_file),
+                    "requirements.txt",
                 ],
                 cwd=project_dir,
                 check=True,
                 capture_output=True,
                 text=True,
             )
-        ENTRY_FILES = {"main.py", "app.py", "run.py", "server.py", "index.py"}
+        ENTRY_FILES = [
+            "main.py",
+            "app.py",
+            "run.py",
+            "server.py",
+            "index.py",
+        ]
+
         entry_path = None
+
         for entry in ENTRY_FILES:
-            match = next(project_dir.rglob(entry), None)
-            if match:
-                entry_path = match.relative_to(project_dir)
+            candidate = project_dir / entry
+
+            if candidate.is_file():
+                entry_path = candidate.relative_to(project_dir)
                 break
+
+        if entry_path is None:
+            for entry in ENTRY_FILES:
+                for match in project_dir.rglob(entry):
+
+                    if venv_dir in match.parents:
+                        continue
+
+                    entry_path = match.relative_to(project_dir)
+                    break
+
+                if entry_path is not None:
+                    break
+            
+        if entry_path is None:
+            
+            for python_file in python_files:
+                compile_result = subprocess.run(
+                    [
+                        str(python_executable),
+                        "-m",
+                        "py_compile",
+                        str(python_file.relative_to(project_dir)),
+                    ],
+                    capture_output=True,
+                    text=True,
+                    cwd=project_dir,
+                )
+
+                if compile_result.returncode != 0:
+                    return ExecutionResult(
+                        success=False,
+                        stdout="",
+                        stderr=compile_result.stderr,
+                        exit_code=compile_result.returncode,
+                        execution_time=round(
+                            time.perf_counter() - start_time, 3
+                        ),
+                        error_type="SyntaxError",
+                    )
+            execution_time = round(time.perf_counter() - start_time, 3)
+            return ExecutionResult(
+                success=False,
+                stdout="",
+                stderr="No executable entry point found.",
+                exit_code=-1,
+                execution_time=execution_time,
+                error_type="EntryPointError",
+            )
         compile_result = subprocess.run(
         [
             str(python_executable),
@@ -77,11 +133,15 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
         cwd=project_dir,
         )
         if compile_result.returncode != 0:
+            execution_time = round(time.perf_counter() - start_time, 3)
+
             return ExecutionResult(
                 success=False,
                 stdout="",
                 stderr=compile_result.stderr,
                 exit_code=compile_result.returncode,
+                execution_time=execution_time,
+                error_type="SyntaxError",
             )
        
         result = subprocess.run(
@@ -92,31 +152,36 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
             timeout=5,
         )
         execution_time = round(time.perf_counter() - start_time, 3)
-        if entry_path is None:
-            return ExecutionResult(
-                success=False,
-                stdout="",
-                stderr="No executable entry point found (expected one of: main.py, app.py, run.py, server.py, index.py).",
-                exit_code=-1,
-            )
+        
+        error_type = None
+        if result.returncode != 0:
+            error_type = classify_error(result.stderr)
+
+        execution_time = round(time.perf_counter()-start_time,3)
 
         return ExecutionResult(
-            success=result.returncode == 0,
-            stdout=result.stdout,
-            stderr=result.stderr,
-            exit_code=result.returncode,
-        )
+        success=result.returncode == 0,
+        stdout=result.stdout,
+        stderr=result.stderr,
+        exit_code=result.returncode,
+        execution_time=execution_time,
+        error_type=error_type,
+    )
 
     except subprocess.CalledProcessError as e:
+        execution_time = round(time.perf_counter() - start_time, 3)
+        error_type = classify_error(e.stderr or "")
         return ExecutionResult(
             success=False,
             stdout=e.stdout or "",
             stderr=e.stderr or str(e),
             exit_code=e.returncode,
+            execution_time=execution_time,
+            error_type=error_type,
         )
 
-    except subprocess.TimeoutExpired:
-
+    except subprocess.TimeoutExpired as e:
+        error_type = "Timeout"
         uses_input = any(
             "input(" in file.content
             for file in project.files
@@ -130,11 +195,39 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
             )
         else:
             error = "Execution timed out after 5 seconds."
-
+        execution_time = round(time.perf_counter() - start_time, 3)
         return ExecutionResult(
             success=False,
             stdout="",
             stderr=error,
             exit_code=-1,
-            execution_time=execution_time
+            execution_time=execution_time,
+            error_type=error_type
         )
+    
+def classify_error(stderr: str) -> str | None:
+    if "SyntaxError" in stderr:
+        return "SyntaxError"
+
+    if "ModuleNotFoundError" in stderr:
+        return "ModuleNotFoundError"
+
+    if "ImportError" in stderr:
+        return "ImportError"
+
+    if "FileNotFoundError" in stderr:
+        return "FileNotFoundError"
+
+    if "NameError" in stderr:
+        return "NameError"
+
+    if "TypeError" in stderr:
+        return "TypeError"
+
+    if "ValueError" in stderr:
+        return "ValueError"
+
+    if "TimeoutExpired" in stderr:
+        return "Timeout"
+
+    return None
