@@ -14,7 +14,7 @@ def run_agent(user_prompt: str):
     for i in range(MAX_RETRIES):
 
         if i == 0:
-            code = write_code(plan)
+            code = write_code(plan,user_prompt)
         else:
             code = rewrite_code(
                 plan,

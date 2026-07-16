@@ -4,13 +4,16 @@ from app.models.schemas import Plan, CodeResponse
 from app.services.llm.factory import get_llm
 
 
-def write_code(plan: Plan) -> CodeResponse:
+def write_code(plan: Plan, user_request) -> CodeResponse:
     llm = get_llm()
 
     prompt = f"""
 You are an expert Python software engineer.
 
 Your task is to generate a complete, executable software project.
+
+ORIGINAL USER REQUEST:
+{user_request}
 
 Goal:
 {plan.goal}
