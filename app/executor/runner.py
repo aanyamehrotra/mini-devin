@@ -4,9 +4,8 @@ import uuid
 import sys
 import time
 from pathlib import Path
-
 from app.models.schemas import CodeResponse, ExecutionResult
-
+from app.executor.docker_runner import run_in_docker
 
 def execute_code(project: CodeResponse) -> ExecutionResult:
     start_time = time.perf_counter()
@@ -40,6 +39,7 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
         requirements_file = project_dir / "requirements.txt"
 
         if requirements_file.exists() and requirements_file.read_text().strip():
+            
             subprocess.run(
                 [
                     str(python_executable),
@@ -74,18 +74,19 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
         if entry_path is None:
             for entry in ENTRY_FILES:
                 for match in project_dir.rglob(entry):
-
                     if venv_dir in match.parents:
                         continue
-
                     entry_path = match.relative_to(project_dir)
                     break
 
                 if entry_path is not None:
                     break
-            
+        python_files = [
+            python_file
+            for python_file in project_dir.rglob("*.py")
+            if venv_dir not in python_file.parents
+        ]
         if entry_path is None:
-            
             for python_file in python_files:
                 compile_result = subprocess.run(
                     [
@@ -142,22 +143,18 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
                 execution_time=execution_time,
                 error_type="SyntaxError",
             )
-       
-        result = subprocess.run(
+        result = run_in_docker(project_dir, entry_path)
+        '''result = subprocess.run(
             [str(python_executable), str(entry_path)],
             capture_output=True,
             text=True,
             cwd=project_dir,
             timeout=5,
-        )
-        execution_time = round(time.perf_counter() - start_time, 3)
-        
+        ) '''
         error_type = None
         if result.returncode != 0:
             error_type = classify_error(result.stderr)
-
         execution_time = round(time.perf_counter()-start_time,3)
-
         return ExecutionResult(
         success=result.returncode == 0,
         stdout=result.stdout,

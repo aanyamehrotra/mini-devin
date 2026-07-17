@@ -13,6 +13,7 @@ def review_code(
     plan: Plan,
     code: CodeResponse,
     execution: ExecutionResult,
+    user_request
 ) -> ReviewResult:
 
     llm = get_llm()
@@ -25,6 +26,9 @@ the requested plan.
 
 PROJECT GOAL:
 {plan.goal}
+
+ORIGINAL USER REQUEST:
+{user_request}
 
 REQUIRED FEATURES:
 {chr(10).join("- " + feature for feature in plan.features)}

@@ -37,6 +37,7 @@ def run_agent(user_prompt: str):
             plan,
             code,
             execution,
+            user_prompt
         )
 
         print("Reviewer:")
