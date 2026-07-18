@@ -92,7 +92,6 @@ Rules:
 
     return CodeResponse(**data)
 
-
 def rewrite_code(
     plan: Plan,
     previous_code: CodeResponse,

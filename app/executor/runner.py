@@ -1,14 +1,15 @@
-import platform
 import subprocess
 import uuid
-import sys
 import time
 from pathlib import Path
+
 from app.models.schemas import CodeResponse, ExecutionResult
 from app.executor.docker_runner import run_in_docker
 
+
 def execute_code(project: CodeResponse) -> ExecutionResult:
     start_time = time.perf_counter()
+
     workspace = Path("workspace")
     workspace.mkdir(exist_ok=True)
 
@@ -20,40 +21,7 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
         file_path.parent.mkdir(parents=True, exist_ok=True)
         file_path.write_text(file.content)
 
-    venv_dir = project_dir / "venv"
-
     try:
-
-        subprocess.run(
-            [sys.executable, "-m", "venv", str(venv_dir)],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-
-        if platform.system() == "Windows":
-            python_executable = (venv_dir / "Scripts" / "python.exe").resolve()
-        else:
-            python_executable =(venv_dir / "bin" / "python").resolve()
-
-        requirements_file = project_dir / "requirements.txt"
-
-        if requirements_file.exists() and requirements_file.read_text().strip():
-            
-            subprocess.run(
-                [
-                    str(python_executable),
-                    "-m",
-                    "pip",
-                    "install",
-                    "-r",
-                    "requirements.txt",
-                ],
-                cwd=project_dir,
-                check=True,
-                capture_output=True,
-                text=True,
-            )
         ENTRY_FILES = [
             "main.py",
             "app.py",
@@ -74,23 +42,19 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
         if entry_path is None:
             for entry in ENTRY_FILES:
                 for match in project_dir.rglob(entry):
-                    if venv_dir in match.parents:
-                        continue
                     entry_path = match.relative_to(project_dir)
                     break
 
                 if entry_path is not None:
                     break
-        python_files = [
-            python_file
-            for python_file in project_dir.rglob("*.py")
-            if venv_dir not in python_file.parents
-        ]
+
+        python_files = list(project_dir.rglob("*.py"))
+
         if entry_path is None:
             for python_file in python_files:
                 compile_result = subprocess.run(
                     [
-                        str(python_executable),
+                        "python3",
                         "-m",
                         "py_compile",
                         str(python_file.relative_to(project_dir)),
@@ -107,33 +71,47 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
                         stderr=compile_result.stderr,
                         exit_code=compile_result.returncode,
                         execution_time=round(
-                            time.perf_counter() - start_time, 3
+                            time.perf_counter() - start_time,
+                            3,
                         ),
                         error_type="SyntaxError",
                     )
-            execution_time = round(time.perf_counter() - start_time, 3)
+
+            execution_time = round(
+                time.perf_counter() - start_time,
+                3,
+            )
 
             return ExecutionResult(
                 success=True,
-                stdout="All Python files compiled successfully. No executable entry point found; project validated as a module/library.",
+                stdout=(
+                    "All Python files compiled successfully. "
+                    "No executable entry point found; "
+                    "project validated as a module/library."
+                ),
                 stderr="",
                 exit_code=0,
                 execution_time=execution_time,
                 error_type=None,
             )
+
         compile_result = subprocess.run(
-        [
-            str(python_executable),
-            "-m",
-            "py_compile",
-            str(entry_path),
-        ],
-        capture_output=True,
-        text=True,
-        cwd=project_dir,
+            [
+                "python3",
+                "-m",
+                "py_compile",
+                str(entry_path),
+            ],
+            capture_output=True,
+            text=True,
+            cwd=project_dir,
         )
+
         if compile_result.returncode != 0:
-            execution_time = round(time.perf_counter() - start_time, 3)
+            execution_time = round(
+                time.perf_counter() - start_time,
+                3,
+            )
 
             return ExecutionResult(
                 success=False,
@@ -143,30 +121,39 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
                 execution_time=execution_time,
                 error_type="SyntaxError",
             )
-        result = run_in_docker(project_dir, entry_path)
-        '''result = subprocess.run(
-            [str(python_executable), str(entry_path)],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-            timeout=5,
-        ) '''
+
+        result = run_in_docker(
+            project_dir,
+            entry_path,
+        )
+
         error_type = None
+
         if result.returncode != 0:
             error_type = classify_error(result.stderr)
-        execution_time = round(time.perf_counter()-start_time,3)
+
+        execution_time = round(
+            time.perf_counter() - start_time,
+            3,
+        )
+
         return ExecutionResult(
-        success=result.returncode == 0,
-        stdout=result.stdout,
-        stderr=result.stderr,
-        exit_code=result.returncode,
-        execution_time=execution_time,
-        error_type=error_type,
-    )
+            success=result.returncode == 0,
+            stdout=result.stdout,
+            stderr=result.stderr,
+            exit_code=result.returncode,
+            execution_time=execution_time,
+            error_type=error_type,
+        )
 
     except subprocess.CalledProcessError as e:
-        execution_time = round(time.perf_counter() - start_time, 3)
+        execution_time = round(
+            time.perf_counter() - start_time,
+            3,
+        )
+
         error_type = classify_error(e.stderr or "")
+
         return ExecutionResult(
             success=False,
             stdout=e.stdout or "",
@@ -176,8 +163,12 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
             error_type=error_type,
         )
 
-    except subprocess.TimeoutExpired as e:
-        error_type = "Timeout"
+    except subprocess.TimeoutExpired:
+        execution_time = round(
+            time.perf_counter() - start_time,
+            3,
+        )
+
         uses_input = any(
             "input(" in file.content
             for file in project.files
@@ -187,20 +178,22 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
             error = (
                 "Program requires interactive user input. "
                 "Autonomous execution does not provide stdin. "
-                "Rewrite the program to remove input() and use sample values instead."
+                "Rewrite the program to remove input() "
+                "and use sample values instead."
             )
         else:
-            error = "Execution timed out after 5 seconds."
-        execution_time = round(time.perf_counter() - start_time, 3)
+            error = "Docker execution timed out after 30 seconds."
+
         return ExecutionResult(
             success=False,
             stdout="",
             stderr=error,
             exit_code=-1,
             execution_time=execution_time,
-            error_type=error_type
+            error_type="Timeout",
         )
-    
+
+
 def classify_error(stderr: str) -> str | None:
     if "SyntaxError" in stderr:
         return "SyntaxError"
