@@ -1,2 +1,0 @@
-print('MAIN')
-import app
