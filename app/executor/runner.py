@@ -4,7 +4,10 @@ import time
 from pathlib import Path
 
 from app.models.schemas import CodeResponse, ExecutionResult
-from app.executor.docker_runner import run_in_docker
+from app.executor.docker_runner import (
+    run_in_docker,
+    validate_in_docker,
+)
 
 
 def execute_code(project: CodeResponse) -> ExecutionResult:
@@ -16,6 +19,7 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
     project_dir = workspace / str(uuid.uuid4())
     project_dir.mkdir(parents=True, exist_ok=True)
 
+    # Write generated files into the workspace
     for file in project.files:
         file_path = project_dir / file.path
         file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -32,6 +36,7 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
 
         entry_path = None
 
+        # First look for an entry file in the project root
         for entry in ENTRY_FILES:
             candidate = project_dir / entry
 
@@ -39,6 +44,7 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
                 entry_path = candidate.relative_to(project_dir)
                 break
 
+        # If no root entry file exists, search subdirectories
         if entry_path is None:
             for entry in ENTRY_FILES:
                 for match in project_dir.rglob(entry):
@@ -48,35 +54,32 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
                 if entry_path is not None:
                     break
 
+        # Find all generated Python files
         python_files = list(project_dir.rglob("*.py"))
 
-        if entry_path is None:
-            for python_file in python_files:
-                compile_result = subprocess.run(
-                    [
-                        "python3",
-                        "-m",
-                        "py_compile",
-                        str(python_file.relative_to(project_dir)),
-                    ],
-                    capture_output=True,
-                    text=True,
-                    cwd=project_dir,
+        # Validate all Python files inside Docker
+        if python_files:
+            compile_result = validate_in_docker(
+                project_dir,
+                python_files,
+            )
+
+            if compile_result.returncode != 0:
+                return ExecutionResult(
+                    success=False,
+                    stdout=compile_result.stdout,
+                    stderr=compile_result.stderr,
+                    exit_code=compile_result.returncode,
+                    execution_time=round(
+                        time.perf_counter() - start_time,
+                        3,
+                    ),
+                    error_type="SyntaxError",
                 )
 
-                if compile_result.returncode != 0:
-                    return ExecutionResult(
-                        success=False,
-                        stdout="",
-                        stderr=compile_result.stderr,
-                        exit_code=compile_result.returncode,
-                        execution_time=round(
-                            time.perf_counter() - start_time,
-                            3,
-                        ),
-                        error_type="SyntaxError",
-                    )
-
+        # If there is no runnable entry point,
+        # treat the project as a valid module/library
+        if entry_path is None:
             execution_time = round(
                 time.perf_counter() - start_time,
                 3,
@@ -85,7 +88,7 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
             return ExecutionResult(
                 success=True,
                 stdout=(
-                    "All Python files compiled successfully. "
+                    "All Python files compiled successfully inside Docker. "
                     "No executable entry point found; "
                     "project validated as a module/library."
                 ),
@@ -95,33 +98,7 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
                 error_type=None,
             )
 
-        compile_result = subprocess.run(
-            [
-                "python3",
-                "-m",
-                "py_compile",
-                str(entry_path),
-            ],
-            capture_output=True,
-            text=True,
-            cwd=project_dir,
-        )
-
-        if compile_result.returncode != 0:
-            execution_time = round(
-                time.perf_counter() - start_time,
-                3,
-            )
-
-            return ExecutionResult(
-                success=False,
-                stdout="",
-                stderr=compile_result.stderr,
-                exit_code=compile_result.returncode,
-                execution_time=execution_time,
-                error_type="SyntaxError",
-            )
-
+        # Execute the generated project inside Docker
         result = run_in_docker(
             project_dir,
             entry_path,
