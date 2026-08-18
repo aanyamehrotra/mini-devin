@@ -13,7 +13,7 @@ class GroqLLM(BaseLLM):
 
         response = self.client.chat.completions.create(
 
-            model="llama-3.3-70b-versatile",
+            model="groq/compound-mini",
 
             messages=[
                 {
