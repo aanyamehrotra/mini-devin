@@ -9,59 +9,37 @@ def plan_task(user_request: str) -> Plan:
     llm = get_llm()
 
     prompt = f"""
-    You are the Planner Agent in an autonomous software engineering system.
+    You are the Planner Agent in an autonomous coding system.
 
-    Your ONLY responsibility is planning.
+    Convert the user's request into a minimal implementation plan.
 
-    DO NOT write code.
-    DO NOT explain implementation details.
-
-    Given this request:
-
+    USER REQUEST:
     {user_request}
 
-    Return ONLY valid JSON.
-
-    The JSON must exactly follow this schema:
+    Return ONLY valid JSON matching this exact structure:
 
     {{
         "goal": "short project goal",
-        "features": [
-            "feature 1",
-            "feature 2"
-        ],
-        "files": [
-            "main.py"
-        ],
-        "technologies": [
-            "Python"
-        ],
-        "steps": [
-            "step 1",
-            "step 2",
-            "step 3"
-        ]
+        "features": ["feature 1", "feature 2"],
+        "files": ["main.py"],
+        "technologies": ["Python"],
+        "steps": ["step 1", "step 2", "step 3"]
     }}
-    CRITICAL RULES:
-    - Do not invent features or requirements that the user did not explicitly request.
-    - The generated program must be suitable for autonomous execution.
-    - Do not plan interactive terminal input using input().
-    - If values are needed and the user did not specify them, use realistic sample values.
-    - Only include features directly required to satisfy the user's request.
-        Return ONLY the JSON.
-    IMPORTANT:
-    Preserve all exact user-provided details in the plan, including literal strings,
-    numbers, filenames, technologies, constraints, and expected outputs.
 
-    Never replace a specific requirement with a generic description.
+    Rules:
+    - Plan only; never write code.
+    - Include only requirements explicitly requested by the user.
+    - Preserve exact user-provided strings, numbers, filenames, technologies, constraints, and expected outputs.
+    - Do not invent features.
+    - Do not plan interactive input using input().
+    - If unspecified values are required, use realistic sample values.
+    - Keep the plan concise.
+    - Return JSON only. No markdown or explanation.
 
     Example:
     User: Print "Hello Mini Devin"
-    Correct feature: Print exactly "Hello Mini Devin"
-    Incorrect feature: Print a greeting message
-    No markdown.
-    No explanation.
-    No backticks.
+    Correct: "Print exactly \\"Hello Mini Devin\\""
+    Incorrect: "Print a greeting message"
     """
 
     response = llm.generate(prompt).strip()

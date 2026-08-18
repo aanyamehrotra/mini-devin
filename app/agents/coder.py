@@ -8,75 +8,53 @@ def write_code(plan: Plan, user_request) -> CodeResponse:
     llm = get_llm()
 
     prompt = f"""
-You are an expert Python software engineer.
+    You are the Coder Agent in an autonomous software engineering system.
 
-Your task is to generate a complete, executable software project.
+    Generate the complete executable project described below.
 
-ORIGINAL USER REQUEST:
-{user_request}
+    USER REQUEST:
+    {user_request}
 
-Goal:
-{plan.goal}
+    PLAN:
+    Goal: {plan.goal}
 
-Features:
-{chr(10).join("- " + feature for feature in plan.features)}
+    Features:
+    {chr(10).join("- " + feature for feature in plan.features)}
 
-Suggested Files:
-{chr(10).join("- " + file for file in plan.files)}
+    Files:
+    {chr(10).join("- " + file for file in plan.files)}
 
-Implementation Steps:
-{chr(10).join(f"{i+1}. {step}" for i, step in enumerate(plan.steps))}
+    Steps:
+    {chr(10).join(f"{i+1}. {step}" for i, step in enumerate(plan.steps))}
 
-Return ONLY valid JSON.
+    Return ONLY JSON in this exact format:
 
-The JSON MUST exactly follow this schema:
-
-{{
-  "files": [
     {{
-      "path": "main.py",
-      "content": "..."
-    }},
-    {{
-      "path": "requirements.txt",
-      "content": "flask\\nrequests"
+      "files": [
+        {{
+          "path": "main.py",
+          "content": "..."
+        }}
+      ]
     }}
-  ]
-}}
 
-Each object represents one file in the project.
+    CODING RULES:
+    - Generate complete, executable code.
+    - Always include main.py as the entry point.
+    - Include every file listed in the plan.
+    - Add additional files only when necessary.
+    - Every file must appear exactly once.
+    - The program must run autonomously.
+    - Never use input() or wait for interactive stdin.
+    - Use realistic sample values when values are unspecified.
+    - Never install packages from inside Python code.
+    - Put external Python dependencies in requirements.txt, one package per line.
+    - Do not include standard-library modules in requirements.txt.
+    - Do not create requirements.txt when no external packages are needed.
+    - Preserve the user's exact requirements, strings, numbers, filenames, constraints, and expected outputs.
 
-Dependency Rules:
-
-- If the project uses any external Python package (Flask, FastAPI, requests, pandas, numpy, matplotlib, sqlalchemy, etc.), you MUST generate a requirements.txt file.
-- requirements.txt must contain one package per line.
-- Do NOT include Python standard library modules.
-- If only the Python standard library is used, do NOT generate requirements.txt.
-
-Project Rules:
-
-- Always generate main.py as the project entry point.
-- Every file suggested above MUST appear.
-- You may generate additional files if needed to make the project complete.
-- Examples include requirements.txt, utils.py, models.py, config.py and README.md.
-- Every generated file must appear exactly once.
-
-Execution Rules:
-
-- The generated program must run autonomously.
-- Do NOT use input().
-- If values are needed, assign realistic sample values directly.
-- Do NOT install packages inside Python code.
-- Assume dependencies will be installed from requirements.txt.
-
-Rules:
-
-- Return ONLY valid JSON.
-- No markdown.
-- No triple backticks.
-- No explanation.
-"""
-
+    Return JSON only. No markdown or explanation.
+    """
     response = llm.generate(prompt).strip()
 
     if response.startswith("```"):
@@ -101,27 +79,23 @@ def rewrite_code(
     llm = get_llm()
 
     prompt = f"""
-You are an expert Python software engineer.
+You are the Fixer Agent in an autonomous software engineering system.
 
-The previous implementation failed review.
+The generated project failed review. Fix the implementation while preserving the user's requirements.
 
-Project Goal:
+PROJECT GOAL:
 {plan.goal}
 
-Required Features:
+REQUIRED FEATURES:
 {chr(10).join("- " + feature for feature in plan.features)}
 
-Current Project:
-
+CURRENT PROJECT:
 {previous_code.model_dump_json(indent=2)}
 
-Reviewer Feedback:
-
+REVIEWER FEEDBACK:
 {review}
 
-Return ONLY valid JSON.
-
-Use this schema:
+Return ONLY JSON in this exact format:
 
 {{
   "files": [
@@ -132,33 +106,21 @@ Use this schema:
   ]
 }}
 
-Execution Rules:
-
+FIXING RULES:
+- Fix the issues identified by the reviewer.
+- Preserve code that is already correct.
+- Keep existing files unless they must be changed.
+- Add files only when necessary.
+- Keep main.py as the entry point.
+- Preserve the user's exact requirements.
 - The program must run autonomously.
-- Do NOT use input().
-- Assign sample values wherever needed.
-- Do NOT install packages inside Python code.
-- If external packages are required, include or update requirements.txt.
+- Never use input() or wait for interactive stdin.
+- Use realistic sample values when needed.
+- Never install packages inside Python code.
+- Include external dependencies in requirements.txt.
+- Do not include standard-library modules in requirements.txt.
 
-Project Rules:
-
-- Keep every existing file unless the reviewer explicitly requests otherwise.
-- Fix only the issues mentioned by the reviewer.
-- Preserve files that are already correct.
-- You may add new files if required to make the project executable.
-- Always keep main.py as the entry point.
-
-IMPORTANT:
-The rewritten program must run autonomously.
-Never use input() or any other mechanism that waits for interactive stdin.
-If the reviewer requests interactive input, ignore that specific request and use realistic sample values instead.
-Preserve the user's actual requirements while fixing valid issues.
-
-Rules:
-
-- Return ONLY JSON.
-- No markdown.
-- No explanation.
+Return JSON only. No markdown or explanation.
 """
 
     response = llm.generate(prompt).strip()

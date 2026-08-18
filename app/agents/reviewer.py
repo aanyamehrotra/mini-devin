@@ -21,14 +21,13 @@ def review_code(
     prompt = f"""
 You are the Reviewer Agent in an autonomous coding system.
 
-Your job is to determine whether the generated project correctly satisfies
-the requested plan.
+Determine whether the generated project satisfies the user's request.
+
+USER REQUEST:
+{user_request}
 
 PROJECT GOAL:
 {plan.goal}
-
-ORIGINAL USER REQUEST:
-{user_request}
 
 REQUIRED FEATURES:
 {chr(10).join("- " + feature for feature in plan.features)}
@@ -36,90 +35,37 @@ REQUIRED FEATURES:
 GENERATED PROJECT:
 {code.model_dump_json(indent=2)}
 
-EXECUTION RESULT:
-
-Success:
-{execution.success}
-
-Exit Code:
-{execution.exit_code}
-
-Stdout:
-{execution.stdout}
-
-Stderr:
-{execution.stderr}
-
-Error Type:
-{execution.error_type}
-
+EXECUTION:
+success={execution.success}
+exit_code={execution.exit_code}
+stdout={execution.stdout}
+stderr={execution.stderr}
+error_type={execution.error_type}
 
 REVIEW RULES:
+- Check the requested goal and every required feature.
+- Do not invent problems or demand stylistic changes when the code is functionally correct.
+- Execution failure does not automatically mean the code is wrong; distinguish code problems from environment problems.
+- Multiple files do not all need to execute directly.
+- Interactive input is never allowed.
+- If the code is correct, return success=true and failure_source=null.
+- If generated code is wrong, return success=false and failure_source="code".
+- If dependencies are missing or incorrect, return success=false and failure_source="requirements".
+- If the execution environment caused the failure, return success=false and failure_source="execution_environment".
+- When unsuccessful, give the Fixer a concise, specific description of what must change.
 
-1. Evaluate whether the generated project actually satisfies the requested
-   goal and required features.
-
-2. Execution failure does NOT automatically mean the generated code is wrong.
-
-3. Consider whether the observed execution behavior is expected for the
-   requested task.
-
-   Example:
-   If the requested task is to create an infinite loop and execution stops
-   because of the environment timeout, the code may still be correct.
-
-4. If you determine that NO CODE CHANGES are necessary:
-   - success must be true
-   - failure_source must be null
-
-5. If code changes ARE necessary:
-   - success must be false
-   - explain the exact required fix in feedback
-
-6. Do not invent problems without concrete evidence.
-
-7. Do not require stylistic changes when the implementation is functionally
-   correct.
-
-8. Valid Python imports include:
-   - import module_name
-   - from module_name import item
-
-9. Multiple generated files do NOT all need to execute during a single run
-   unless the requested behavior explicitly requires that.
-
-10. The generated project must run without interactive terminal input.
-    Never require or suggest input().
-
-11. If execution failure is caused by the execution environment rather than
-    incorrect generated code, set failure_source to "execution_environment".
-
-12. If the problem is caused by generated code, set failure_source to "code".
-
-13. If the problem is caused by missing or incorrect dependencies, set
-    failure_source to "requirements".
-
-
-RETURN FORMAT:
-
-Return ONLY valid JSON matching exactly this structure:
+Return ONLY valid JSON:
 
 {{
     "success": true,
-    "feedback": "Brief explanation of the review result.",
+    "feedback": "Brief review result.",
     "failure_source": null
 }}
 
-failure_source must be exactly one of:
+failure_source must be exactly:
+"code", "requirements", "execution_environment", or null.
 
-"code"
-"execution_environment"
-"requirements"
-null
-
-Do not include markdown.
-Do not include code fences.
-Do not include any text before or after the JSON.
+No markdown. No explanation outside the JSON.
 """
 
     response = llm.generate(prompt).strip()
