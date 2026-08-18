@@ -1,4 +1,5 @@
-from groq import Groq
+import time
+from groq import Groq, RateLimitError
 
 from app.config import GROQ_API_KEY
 from app.services.llm.base import BaseLLM
@@ -11,19 +12,33 @@ class GroqLLM(BaseLLM):
 
     def generate(self, prompt: str) -> str:
 
-        response = self.client.chat.completions.create(
+        max_retries = 3
 
-            model="groq/compound-mini",
+        for attempt in range(max_retries):
+            try:
+                response = self.client.chat.completions.create(
+                    model="groq/compound-mini",
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ],
+                    temperature=0.2,
+                )
 
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
+                return response.choices[0].message.content
 
-            temperature=0.2,
+            except RateLimitError:
+                if attempt == max_retries - 1:
+                    raise
 
-        )
+                wait_time = 2 ** attempt
+                print(
+                    f"Rate limit reached. "
+                    f"Retrying in {wait_time} seconds..."
+                )
 
-        return response.choices[0].message.content
+                time.sleep(wait_time)
+
+        raise RuntimeError("LLM request failed after retries")
