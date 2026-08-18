@@ -29,14 +29,20 @@ class GroqLLM(BaseLLM):
 
                 return response.choices[0].message.content
 
-            except RateLimitError:
+            except RateLimitError as e:
                 if attempt == max_retries - 1:
                     raise
 
-                wait_time = 2 ** attempt
+                retry_after = e.response.headers.get("retry-after")
+
+                if retry_after:
+                    wait_time = float(retry_after)
+                else:
+                    wait_time = 2 ** attempt
+
                 print(
                     f"Rate limit reached. "
-                    f"Retrying in {wait_time} seconds..."
+                    f"Retrying in {wait_time:.1f} seconds..."
                 )
 
                 time.sleep(wait_time)
