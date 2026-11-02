@@ -2,6 +2,7 @@ import subprocess
 import uuid
 import time
 from pathlib import Path
+from app.executor.workspace import resolve_project_files
 
 from app.models.schemas import CodeResponse, ExecutionResult
 from app.executor.docker_runner import (
@@ -19,11 +20,18 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
     project_dir = workspace / str(uuid.uuid4())
     project_dir.mkdir(parents=True, exist_ok=True)
 
-    # Write generated files into the workspace
-    for file in project.files:
-        file_path = project_dir / file.path
+    # Validate the entire batch before writing any generated content.
+    try:
+        project_files = resolve_project_files(project_dir, project.files)
+    except ValueError as error:
+        return ExecutionResult(
+            success=False, stdout="", stderr=str(error), exit_code=-1,
+            execution_time=round(time.perf_counter() - start_time, 3),
+            error_type="InvalidProjectPath",
+        )
+    for file_path, content in project_files:
         file_path.parent.mkdir(parents=True, exist_ok=True)
-        file_path.write_text(file.content)
+        file_path.write_text(content, encoding="utf-8")
 
     try:
         ENTRY_FILES = [
