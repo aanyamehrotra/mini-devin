@@ -27,3 +27,30 @@ Validation:
 Daily automation is active at 19:00 Asia/Kolkata through November 16. Next: Ollama
 provider and provider contract tests. Infrastructure error handling and stronger
 Docker isolation remain on the roadmap.
+
+## Ollama milestone — November 4, 2026 (IST)
+
+Completed the Day 2 deliverable on November 4 local time. This run arrived at
+00:30 IST; it is not backdated to November 3. The saved checkout was read-only,
+so development used a fresh upstream clone in a temporary writable folder.
+
+Added an Ollama implementation of BaseLLM using the non-streaming generate API.
+Model, server URL and timeout are configurable. Responses must contain completed,
+nonempty text; transport errors, provider errors, malformed JSON and incomplete
+responses fail explicitly. Provider selection now tolerates case and whitespace.
+Added a credential-free environment example and provider setup/testing guide.
+
+Validation:
+- python3 -m unittest discover -s tests -v: all 15 tests passed (8 new provider
+  tests plus the 7 existing workspace tests).
+- Provider selection uses mocked constructors for Gemini/Groq/Ollama; Ollama
+  checks cover payload, timeout, HTTP errors, connection errors, malformed and
+  incomplete responses, and invalid configuration. No live API calls were made.
+- python3 -m compileall -q app tests and git diff --check: passed.
+- Live Ollama check not run: Ollama executable is unavailable in this environment.
+- Docker check remains blocked: Docker service socket is absent.
+- Live Gemini/Groq, model quality and end-to-end agent execution are not verified.
+
+Implementation commit: 6dd1c53 (add Ollama provider with configurable generation
+and offline tests). This documentation update is a separate focused commit.
+Next: structured agent-output validation and predictable provider failures.

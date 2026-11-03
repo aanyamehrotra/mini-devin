@@ -153,3 +153,9 @@ The goal of this project is to understand how modern autonomous coding agents wo
 Each component is implemented separately to explore planning, code generation, execution, debugging, and iterative improvement as independent agents working together in a feedback loop.
 
 
+
+## Provider configuration and delivery plan
+
+See [provider setup and tests](docs/PROVIDERS.md) for Gemini, Groq and local
+Ollama configuration. Track the current work in the [roadmap](docs/ROADMAP.md)
+and [daily progress log](docs/PROGRESS.md).
