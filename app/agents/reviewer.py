@@ -1,12 +1,10 @@
-import json
-
 from app.models.schemas import (
     Plan,
     ExecutionResult,
     CodeResponse,
     ReviewResult,
 )
-from app.services.llm.factory import get_llm
+from app.services.llm.structured import generate_structured
 
 
 def review_code(
@@ -16,7 +14,6 @@ def review_code(
     user_request
 ) -> ReviewResult:
 
-    llm = get_llm()
 
     prompt = f"""
 You are the Reviewer Agent in an autonomous coding system.
@@ -68,8 +65,4 @@ failure_source must be exactly:
 No markdown. No explanation outside the JSON.
 """
 
-    response = llm.generate(prompt).strip()
-
-    data = json.loads(response)
-
-    return ReviewResult(**data)
+    return generate_structured(prompt, ReviewResult, "reviewer")

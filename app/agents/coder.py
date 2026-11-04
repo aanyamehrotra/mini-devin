@@ -1,11 +1,8 @@
-import json
-
 from app.models.schemas import Plan, CodeResponse
-from app.services.llm.factory import get_llm
+from app.services.llm.structured import generate_structured
 
 
 def write_code(plan: Plan, user_request) -> CodeResponse:
-    llm = get_llm()
 
     prompt = f"""
     You are the Coder Agent in an autonomous software engineering system.
@@ -55,20 +52,7 @@ def write_code(plan: Plan, user_request) -> CodeResponse:
 
     Return JSON only. No markdown or explanation.
     """
-    response = llm.generate(prompt).strip()
-
-    if response.startswith("```"):
-        response = response.replace("```json", "")
-        response = response.replace("```", "")
-        response = response.strip()
-
-    start = response.find("{")
-    end = response.rfind("}") + 1
-    response = response[start:end]
-
-    data = json.loads(response)
-
-    return CodeResponse(**data)
+    return generate_structured(prompt, CodeResponse, "coder")
 
 def rewrite_code(
     plan: Plan,
@@ -76,7 +60,6 @@ def rewrite_code(
     review: str,
 ) -> CodeResponse:
 
-    llm = get_llm()
 
     prompt = f"""
 You are the Fixer Agent in an autonomous software engineering system.
@@ -123,17 +106,4 @@ FIXING RULES:
 Return JSON only. No markdown or explanation.
 """
 
-    response = llm.generate(prompt).strip()
-
-    if response.startswith("```"):
-        response = response.replace("```json", "")
-        response = response.replace("```", "")
-        response = response.strip()
-
-    start = response.find("{")
-    end = response.rfind("}") + 1
-    response = response[start:end]
-
-    data = json.loads(response)
-
-    return CodeResponse(**data)
+    return generate_structured(prompt, CodeResponse, "rewrite")

@@ -1,12 +1,9 @@
-import json
-
 from app.models.schemas import Plan
-from app.services.llm.factory import get_llm
+from app.services.llm.structured import generate_structured
 
 
 def plan_task(user_request: str) -> Plan:
 
-    llm = get_llm()
 
     prompt = f"""
     You are the Planner Agent in an autonomous coding system.
@@ -42,18 +39,4 @@ def plan_task(user_request: str) -> Plan:
     Incorrect: "Print a greeting message"
     """
 
-    response = llm.generate(prompt).strip()
-
-    if response.startswith("```"):
-        response = response.replace("```json", "")
-        response = response.replace("```", "")
-        response = response.strip()
-
-    start = response.find("{")
-    end = response.rfind("}") + 1
-
-    response = response[start:end]
-
-    data = json.loads(response)
-
-    return Plan(**data)
+    return generate_structured(prompt, Plan, "planner")
