@@ -48,3 +48,17 @@ python3 -m tests.test_llm
 ```
 
 That manual check invokes the selected real provider and may incur provider costs.
+
+## Agent output failures
+
+Planner, coder, rewrite and reviewer responses pass through one shared parser.
+It accepts a complete JSON object or one surrounding JSON Markdown fence. It
+preserves backticks inside code, rejects explanatory text outside JSON, and uses
+strict Pydantic validation (for example, a string `"false"` cannot become a boolean).
+
+`POST /chat` returns HTTP 502 for these upstream failures, with a JSON detail
+object containing `error` and `stage`. Error kinds are `provider_failure`,
+`empty_response`, `invalid_json` and `invalid_schema`; stages are `planner`,
+`coder`, `rewrite` and `reviewer`. Public errors omit provider exception messages
+and raw generated output. Clients should display the stage and allow a new request.
+These failures stop the request; they do not consume the code execution retry loop.

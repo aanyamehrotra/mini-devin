@@ -54,3 +54,29 @@ Validation:
 Implementation commit: 6dd1c53 (add Ollama provider with configurable generation
 and offline tests). This documentation update is a separate focused commit.
 Next: structured agent-output validation and predictable provider failures.
+
+## Structured agent-output milestone — November 4, 2026 (IST)
+
+Completed the Day 3 milestone following the user's request for today's work.
+Synced the upstream Ollama commits into the saved project checkout first.
+
+Replaced four separate parsing paths with one strict JSON/schema boundary for
+planner, coder, rewrite and reviewer. Supports one surrounding Markdown fence
+without deleting backticks within generated source. Rejects prose, multiple JSON
+objects, invalid schema and coerced boolean strings. Provider initialization and
+generation failures now have stable classification; /chat returns HTTP 502 with
+only the error kind and agent stage, avoiding raw provider details in public errors.
+
+Validation:
+- All 21 offline unittest tests passed (6 new structured-response tests).
+- Includes preserving code content, invalid-output classification, strict review
+  booleans, provider initialization/generation failures, direct route error mapping,
+  and stopping before execution on an invalid planner response.
+- Python compilation and git diff --check passed.
+- FastAPI/Starlette emitted Python 3.14 deprecation warnings; tests still passed.
+- Route verification invokes the handler directly, not a live HTTP server.
+- No live provider calls, Docker execution or complete model-driven workflow tested.
+  Existing Ollama installation and Docker service limitations remain unresolved.
+
+Implementation commit: 93251a1. Documentation is a separate focused commit.
+Next: Docker hardening, container cleanup and execution-environment failures.
