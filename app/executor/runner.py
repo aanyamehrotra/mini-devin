@@ -82,7 +82,8 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
                         time.perf_counter() - start_time,
                         3,
                     ),
-                    error_type="SyntaxError",
+                    error_type=("ExecutionEnvironment" if compile_result.returncode == 125
+                                else classify_error(compile_result.stderr) or "ValidationError"),
                 )
 
         # If there is no runnable entry point,
@@ -115,7 +116,8 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
         error_type = None
 
         if result.returncode != 0:
-            error_type = classify_error(result.stderr)
+            error_type = ("ExecutionEnvironment" if result.returncode == 125
+                          else classify_error(result.stderr))
 
         execution_time = round(
             time.perf_counter() - start_time,
@@ -129,6 +131,15 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
             exit_code=result.returncode,
             execution_time=execution_time,
             error_type=error_type,
+        )
+
+    except OSError:
+        return ExecutionResult(
+            success=False, stdout="",
+            stderr="Docker could not be started. Check installation, permissions and service availability.",
+            exit_code=-1,
+            execution_time=round(time.perf_counter() - start_time, 3),
+            error_type="ExecutionEnvironment",
         )
 
     except subprocess.CalledProcessError as e:
