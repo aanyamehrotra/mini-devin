@@ -80,3 +80,33 @@ Validation:
 
 Implementation commit: 93251a1. Documentation is a separate focused commit.
 Next: Docker hardening, container cleanup and execution-environment failures.
+
+## Docker hardening milestone — November 6, 2026 (IST)
+
+Fresh upstream checkout started at e18013e; no uncommitted work was overwritten.
+Implemented the Day 4 Docker milestone after its original November 5 target.
+Day 5's multi-file/dependency checks remain pending. The project is behind its
+original dated roadmap; November 16 remains a target, not verified completion.
+
+Changes: shared Docker launcher, unique container names, bounded forced cleanup
+on normal/failure/timeout paths, dropped capabilities, read-only root filesystem,
+non-root identity, init process and scratch filesystem. No-dependency execution
+and syntax validation disable networking. Dependency projects retain network
+access for compatibility; install/runtime separation is still required. Filenames
+are passed as arguments instead of interpolated shell source. Docker missing/start
+failures become structured ExecutionEnvironment results rather than syntax errors.
+
+Validation:
+- All 30 offline unittest tests passed (9 new Docker/executor tests).
+- New coverage: command isolation flags, noninteractive stdin, timeout cleanup,
+  cleanup failure preserving original results, safe dependency entry arguments,
+  validation network mode, path escape rejection, missing Docker and exit 125
+  classification, and preservation of real SyntaxError classification.
+- python3 -m compileall -q app tests and git diff --check passed.
+- docker info failed: Docker service socket absent. No live container checks,
+  dependency install, resource enforcement or full model-driven workflow verified.
+- FastAPI/Starlette Python 3.14 deprecation warnings remain.
+
+Implementation commit: 3ee3aa0. Execution guide and progress recorded separately.
+Next: multi-file/dependency execution checks and separated dependency installation,
+then LangChain/LangGraph. Live Docker validation needs a running Docker service.
