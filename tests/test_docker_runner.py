@@ -41,17 +41,38 @@ class DockerTests(unittest.TestCase):
         with self.assertLogs('app.executor.docker_runner', level='WARNING'):
             self.assertIs(run_in_docker(self.root, 'main.py'), result)
 
-    @patch('app.executor.docker_runner.subprocess.run')
-    def test_dependency_entry_is_not_shell_source(self, run):
+    @patch('app.executor.docker_runner._run')
+    def test_dependency_runtime_is_separate_and_network_disabled(self, run):
         (self.root / 'requirements.txt').write_text('requests')
         entry = 'nested; touch BAD/main.py'
         run.return_value = subprocess.CompletedProcess([], 0, '', '')
         run_in_docker(self.root, entry)
+        installer, runtime = run.call_args_list
+        self.assertEqual(installer.kwargs['network'], 'bridge')
+        self.assertTrue(installer.kwargs['install'])
+        self.assertIn('--only-binary=:all:', installer.args[1])
+        self.assertNotIn(entry, installer.args[1])
+        self.assertEqual(runtime.args[1], ['python', './'+entry])
+        self.assertNotIn('network', runtime.kwargs)  # _run defaults to none
+        self.assertNotIn('install', runtime.kwargs)
+        self.assertEqual(installer.kwargs['dependencies'], runtime.kwargs['dependencies'])
+        self.assertFalse(Path(runtime.kwargs['dependencies']).exists())
+
+    @patch('app.executor.docker_runner._run')
+    def test_dependency_install_failure_stops_execution(self, run):
+        (self.root / 'requirements.txt').write_text('missing-package')
+        failed = subprocess.CompletedProcess([], 1, '', 'install failed')
+        run.return_value = failed
+        self.assertIs(run_in_docker(self.root, 'main.py'), failed)
+        run.assert_called_once()
+
+    @patch('app.executor.docker_runner.subprocess.run')
+    def test_dependency_mount_read_only_at_runtime(self, run):
+        from app.executor.docker_runner import _run
+        run.return_value = subprocess.CompletedProcess([], 0, '', '')
+        _run(self.root, ['python', './main.py'], dependencies=self.root)
         command = run.call_args_list[0].args[0]
-        self.assertEqual(command[-1], './'+entry)
-        self.assertNotIn(entry, command[-3])
-        self.assertIn('"$1"', command[-3])
-        self.assertEqual(command[command.index('--network')+1], 'bridge')
+        self.assertIn(f'{self.root.resolve()}:/deps:ro', command)
 
     @patch('app.executor.docker_runner.subprocess.run')
     def test_validation_uses_network_none(self, run):

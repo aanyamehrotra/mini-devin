@@ -5,13 +5,14 @@ import os
 from pathlib import Path
 import subprocess
 import uuid
+import tempfile
 
 logger = logging.getLogger(__name__)
 TIMEOUT = 30
 IMAGE = 'python:3.12-slim'
 
 
-def _run(project_dir, command, *, network='none'):
+def _run(project_dir, command, *, network='none', dependencies=None, install=False):
     root = Path(project_dir).resolve()
     name = f'mini-devin-{uuid.uuid4().hex}'
     docker_command = [
@@ -22,9 +23,13 @@ def _run(project_dir, command, *, network='none'):
         '--tmpfs', '/tmp:rw,nosuid,nodev,size=128m,mode=1777',
         '--user', f'{os.getuid() or 65534}:{os.getgid() or 65534}', '--network', network,
         '-e', 'HOME=/tmp', '-e', 'PYTHONPYCACHEPREFIX=/tmp/pycache',
-        '-e', 'PYTHONPATH=/tmp/deps',
+        '-e', 'PYTHONPATH=/deps',
         '-v', f'{root}:/app', '-w', '/app', IMAGE, *command,
     ]
+    if dependencies is not None:
+        mode = 'rw' if install else 'ro'
+        index = docker_command.index(IMAGE)
+        docker_command[index:index] = ['-v', f'{Path(dependencies).resolve()}:/deps:{mode}']
     try:
         return subprocess.run(
             docker_command, capture_output=True, text=True, timeout=TIMEOUT,
@@ -62,10 +67,17 @@ def run_in_docker(project_dir, entry_path):
     entry = _relative_path(project_dir, entry_path)
     requirements = Path(project_dir) / 'requirements.txt'
     if requirements.is_file() and requirements.stat().st_size:
-        # The entry path is a positional argument, never part of shell syntax.
-        script = (
-            'python -m pip install --no-cache-dir --disable-pip-version-check '
-            '--target /tmp/deps -r requirements.txt && exec python "$1"'
-        )
-        return _run(project_dir, ['sh', '-c', script, 'mini-devin', f'./{entry}'], network='bridge')
+        # A fresh host directory transfers wheels between separate containers.
+        # Only the installer is granted networking; application execution is separate.
+        with tempfile.TemporaryDirectory(prefix='mini-devin-deps-') as dependencies:
+            installed = _run(
+                project_dir,
+                ['python', '-m', 'pip', 'install', '--no-cache-dir',
+                 '--disable-pip-version-check', '--only-binary=:all:', '--no-compile',
+                 '--target', '/deps', '-r', 'requirements.txt'],
+                network='bridge', dependencies=dependencies, install=True,
+            )
+            if installed.returncode != 0:
+                return installed
+            return _run(project_dir, ['python', f'./{entry}'], dependencies=dependencies)
     return _run(project_dir, ['python', f'./{entry}'])
