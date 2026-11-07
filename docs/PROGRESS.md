@@ -110,3 +110,27 @@ Validation:
 Implementation commit: 3ee3aa0. Execution guide and progress recorded separately.
 Next: multi-file/dependency execution checks and separated dependency installation,
 then LangChain/LangGraph. Live Docker validation needs a running Docker service.
+
+## Dependency isolation increment — November 7, 2026 (IST)
+
+Started from upstream 6e5676d in a fresh isolated checkout; no existing work changed.
+Moved dependency installation into its own network-enabled container. Dependencies
+transfer through a temporary directory mounted read-only in the network-disabled
+runtime. Failed installation skips execution; temporary dependencies are removed
+on context exit. The default install requests wheels only and disables compilation.
+This does not complete the Day 5 milestone: live multi-file/dependency execution
+checks remain pending, and the overall roadmap remains behind its original dates.
+
+Validation:
+- All 32 offline tests passed (new install-failure and read-only-mount checks,
+  updated dependency-stage separation test; existing regressions retained).
+- Python compilation and git diff --check passed.
+- Docker service still unavailable: docker info reports missing socket. Actual
+  package imports, network denial and container resource behavior are unverified.
+- Existing FastAPI/Starlette Python 3.14 deprecation warnings remain.
+- Install/runtime each retain a 30-second timeout. Packages requiring source builds
+  may fail. Requirements directives/direct references remain unrestricted, and the
+  temporary dependency directory has no quota. No complete sandbox claim is made.
+
+Implementation commit: 2bd03e0. Documentation/progress is a separate commit.
+Next: requirements validation and multi-file execution checks, then orchestration.

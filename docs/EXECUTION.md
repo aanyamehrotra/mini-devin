@@ -11,14 +11,21 @@ The container user matches the host UID/GID; root hosts fall back to UID/GID 655
 The mounted workspace must therefore be readable and writable by that identity.
 A 128 MiB temporary filesystem provides scratch space and Python bytecode storage.
 
-Syntax validation and projects with no nonempty root requirements.txt run with
-network disabled. Projects with requirements.txt install into /tmp/deps using pip
-and currently run in the SAME network-enabled container. This compatibility path
-is not network isolation for dependency projects. Dependency installation and
-execution need separate stages before stronger network isolation can be claimed.
+Syntax validation and application execution run with network disabled. Projects
+with a nonempty root requirements.txt first use a separate network-enabled pip
+container. A temporary host directory transfers installed dependencies into the
+runtime as a read-only /deps mount, then is removed after execution or failure.
+The generated application is not launched if installation fails. Both stages use
+the same Python image and each has a separate 30-second timeout.
 
-Entry paths are checked to remain in the project. Runtime paths are passed as
-arguments (including through a positional shell parameter when installing packages),
+Installation requests wheels only (--only-binary=:all:) and skips bytecode
+compilation. Packages lacking compatible wheels may fail. Requirements are still
+untrusted input: local/direct references and installer options have not yet been
+restricted by an allowlist, so the installer is not a trusted-code boundary. Do not
+provide it credentials. The temporary directory currently has no disk quota.
+
+Entry paths are checked to remain in the project. Runtime paths are passed directly as
+arguments,
 so spaces and shell metacharacters do not become shell instructions. The generated
 workspace remains writable to support project output; the host Docker socket and
 host credentials are not mounted.
@@ -37,7 +44,7 @@ checks before deployment: successful single/multi-file projects, dependency impo
 syntax/runtime errors, timeouts with no surviving containers, denied network access,
 and workspace permissions on the target OS.
 
-Still outstanding: bounded stdout/stderr capture, separate dependency execution,
+Still outstanding: bounded stdout/stderr capture, requirements validation, dependency disk quotas,
 image digest pinning, broader environment classification, workspace retention and
 live container tests. This is an incremental Docker hardening change, not a complete
 security boundary for public arbitrary-code execution.
