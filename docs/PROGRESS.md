@@ -143,3 +143,17 @@ installs, pip options, nested files and environment markers. Comment-only files 
 installation; invalid files return a structured InvalidRequirements result.
 All 36 offline tests pass; compilation and whitespace checks pass. This validates
 syntax and source restrictions, not package trust or real wheel availability.
+
+### November 7 follow-up 2: multi-file execution checks
+
+Added five offline executor tests covering nested entries and all-file writes,
+module-only validation, syntax failures stopping runtime, repeated-run workspace
+isolation, and empty/non-Python projects. Fixed false success for projects with
+no Python files: they now return UnsupportedProject. Nested entry discovery and
+Python-file collection now use deterministic ordering.
+
+All 41 offline tests passed; compilation and whitespace checks passed. Docker
+calls are mocked in these checks: nested code imports and actual dependency
+installation still require live Docker validation. Existing Python 3.14 library
+deprecation warnings remain. These two follow-up commits advance the Day 5 code
+milestone without claiming its live integration checks are complete.

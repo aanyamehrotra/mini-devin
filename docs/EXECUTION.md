@@ -52,3 +52,9 @@ live container tests. This is an incremental Docker hardening change, not a comp
 security boundary for public arbitrary-code execution.
 
 Docker flag behavior: [official docker run reference](https://docs.docker.com/reference/cli/docker/container/run/).
+
+Projects with no Python files return UnsupportedProject instead of successful
+library validation. Python libraries without a recognized entry file are compiled
+but not executed. Nested entry discovery is deterministic. Offline multi-file tests
+verify file writes, entry selection, failure routing and distinct workspaces; they
+do not run generated imports in a real container.

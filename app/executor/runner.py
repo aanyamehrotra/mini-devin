@@ -56,7 +56,7 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
         # If no root entry file exists, search subdirectories
         if entry_path is None:
             for entry in ENTRY_FILES:
-                for match in project_dir.rglob(entry):
+                for match in sorted(project_dir.rglob(entry)):
                     entry_path = match.relative_to(project_dir)
                     break
 
@@ -64,7 +64,16 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
                     break
 
         # Find all generated Python files
-        python_files = list(project_dir.rglob("*.py"))
+        python_files = sorted(project_dir.rglob("*.py"))
+
+        if not python_files:
+            return ExecutionResult(
+                success=False, stdout="",
+                stderr="No Python files were generated; this executor supports Python projects only.",
+                exit_code=-1,
+                execution_time=round(time.perf_counter() - start_time, 3),
+                error_type="UnsupportedProject",
+            )
 
         # Validate all Python files inside Docker
         if python_files:
