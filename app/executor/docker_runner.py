@@ -7,6 +7,8 @@ import subprocess
 import uuid
 import tempfile
 
+from app.executor.requirements import validate_requirements
+
 logger = logging.getLogger(__name__)
 TIMEOUT = 30
 IMAGE = 'python:3.12-slim'
@@ -66,7 +68,7 @@ def validate_in_docker(project_dir, python_files):
 def run_in_docker(project_dir, entry_path):
     entry = _relative_path(project_dir, entry_path)
     requirements = Path(project_dir) / 'requirements.txt'
-    if requirements.is_file() and requirements.stat().st_size:
+    if requirements.is_file() and validate_requirements(requirements.read_text(encoding='utf-8')):
         # A fresh host directory transfers wheels between separate containers.
         # Only the installer is granted networking; application execution is separate.
         with tempfile.TemporaryDirectory(prefix='mini-devin-deps-') as dependencies:

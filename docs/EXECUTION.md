@@ -19,10 +19,12 @@ The generated application is not launched if installation fails. Both stages use
 the same Python image and each has a separate 30-second timeout.
 
 Installation requests wheels only (--only-binary=:all:) and skips bytecode
-compilation. Packages lacking compatible wheels may fail. Requirements are still
-untrusted input: local/direct references and installer options have not yet been
-restricted by an allowlist, so the installer is not a trusted-code boundary. Do not
-provide it credentials. The temporary directory currently has no disk quota.
+compilation. Packages lacking compatible wheels may fail. Requirements accept package names, extras and version constraints only. Local
+paths, direct URLs, editable installs, nested requirement files, pip options and
+environment markers are rejected before installation. Comments are supported;
+comment-only files skip installation. Invalid files return InvalidRequirements.
+This restricted syntax does not establish that a package is trustworthy. Do not
+provide the installer credentials. The temporary directory currently has no disk quota.
 
 Entry paths are checked to remain in the project. Runtime paths are passed directly as
 arguments,
@@ -44,7 +46,7 @@ checks before deployment: successful single/multi-file projects, dependency impo
 syntax/runtime errors, timeouts with no surviving containers, denied network access,
 and workspace permissions on the target OS.
 
-Still outstanding: bounded stdout/stderr capture, requirements validation, dependency disk quotas,
+Still outstanding: bounded stdout/stderr capture, dependency disk quotas,
 image digest pinning, broader environment classification, workspace retention and
 live container tests. This is an incremental Docker hardening change, not a complete
 security boundary for public arbitrary-code execution.

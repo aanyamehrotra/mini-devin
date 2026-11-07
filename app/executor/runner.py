@@ -3,6 +3,7 @@ import uuid
 import time
 from pathlib import Path
 from app.executor.workspace import resolve_project_files
+from app.executor.requirements import InvalidRequirementsError
 
 from app.models.schemas import CodeResponse, ExecutionResult
 from app.executor.docker_runner import (
@@ -131,6 +132,13 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
             exit_code=result.returncode,
             execution_time=execution_time,
             error_type=error_type,
+        )
+
+    except InvalidRequirementsError as error:
+        return ExecutionResult(
+            success=False, stdout="", stderr=str(error), exit_code=-1,
+            execution_time=round(time.perf_counter() - start_time, 3),
+            error_type="InvalidRequirements",
         )
 
     except OSError:

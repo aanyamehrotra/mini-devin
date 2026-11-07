@@ -134,3 +134,12 @@ Validation:
 
 Implementation commit: 2bd03e0. Documentation/progress is a separate commit.
 Next: requirements validation and multi-file execution checks, then orchestration.
+
+### November 7 follow-up 1: requirements validation
+
+Added a restricted requirements parser before Docker installation. Accepts package
+names, extras, version constraints and comments. Rejects local paths, URLs, editable
+installs, pip options, nested files and environment markers. Comment-only files skip
+installation; invalid files return a structured InvalidRequirements result.
+All 36 offline tests pass; compilation and whitespace checks pass. This validates
+syntax and source restrictions, not package trust or real wheel availability.
