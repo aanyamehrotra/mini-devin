@@ -36,3 +36,14 @@ Docker execution. These need verification and hardening, not replacement.
 - AWS readiness is documented; actual deployment depends on an available account,
   target and agreed costs. Do not claim a deployment without verifying it.
 - Every daily report distinguishes automated checks, manual checks and blocked checks.
+
+## Actual status — November 8
+
+Provider abstraction, strict agent-output validation, workspace protection,
+requirements restrictions and Docker hardening code are delivered. Multi-file and
+container logic have offline coverage; live Docker integration remains unverified.
+LangGraph orchestration with request-local history is delivered using LangChain
+Core runnables. Migration to LangChain chat-model adapters is not implemented.
+Streaming API/cancellation, React UI, RAG, product GitHub integration, deployment
+and full end-to-end verification remain. The original dates are targets; the
+remaining scope is not yet verified complete for November 16.

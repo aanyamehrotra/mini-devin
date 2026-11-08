@@ -157,3 +157,35 @@ calls are mocked in these checks: nested code imports and actual dependency
 installation still require live Docker validation. Existing Python 3.14 library
 deprecation warnings remain. These two follow-up commits advance the Day 5 code
 milestone without claiming its live integration checks are complete.
+
+## LangGraph orchestration milestone — November 8, 2026 (IST)
+
+Started at upstream 18072d0, with a clean temporary checkout and no overwritten
+work. Replaced the manager's loop with LangGraph shared-state nodes using
+LangChain Core RunnableLambda. Retained provider adapters and API response fields.
+The graph carries attempt history, caps total attempts, rewrites with review
+feedback, and stops environment failures without another model review/rewrite.
+A reviewer can no longer mark a failed execution as a successful attempt.
+
+Dependency verification found FastAPI 0.104.1's AnyIO <4 requirement conflicting
+with the new dependency set. Updated FastAPI to 0.162.2 and pinned LangGraph
+1.2.20 / LangChain Core 1.7.6. Verified a clean install of all project requirements
+plus HTTPX 0.28.1 (also provided transitively) in a separate environment.
+
+Validation:
+- All 54 offline tests passed in both the initial and clean environments (13 new
+  graph/API tests). Real LangGraph execution with stubbed agents/executor.
+- Covers bounded retries, feedback/history, isolated requests, environment failure
+  short-circuit, rejecting false execution success, provider failure propagation,
+  graph stage updates, custom attempt limit, actual in-process POST /chat success,
+  HTTP 502 mapping, and HTTP 422 request validation.
+- Clean-environment pip check: no broken requirements found.
+- Python compilation and git diff --check passed.
+- LangSmith emitted an asyncio deprecation warning under Python 3.14; clean tests
+  passed. No live model requests, live Docker execution or deployed server checks.
+
+Implementation commit: 6349379. Separate orchestration guide/progress commit follows.
+This delivers graph orchestration and LangChain Core runnable composition, not
+LangChain chat-model adapters. State remains request-local; checkpoint/resume,
+HTTP streaming, cancellation and durable history are still pending. Next: backend
+streaming events and UI integration. Live Docker checks remain an outstanding gate.
