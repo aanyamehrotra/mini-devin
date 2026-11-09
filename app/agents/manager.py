@@ -84,3 +84,36 @@ def run_agent(user_prompt: str):
         config={'recursion_limit': 3 * MAX_RETRIES + 3},
     )
     return {key: state[key] for key in ('plan', 'code', 'execution', 'review', 'attempts')}
+
+
+async def stream_agent(user_prompt: str, *, cancelled=None):
+    """Stream completed stages and a terminal result; cancel between stages.
+
+    Synchronous provider/executor calls already running cannot be forcibly stopped.
+    """
+    state = {'user_prompt': user_prompt, 'attempts': []}
+    updates = build_graph(MAX_RETRIES).astream(
+        state, stream_mode='updates',
+        config={'recursion_limit': 3 * MAX_RETRIES + 3},
+    )
+    try:
+        while True:
+            if cancelled is not None and await cancelled():
+                yield {'event': 'cancelled', 'data': {'reason': 'client_disconnected'}}
+                return
+            try:
+                update = await anext(updates)
+            except StopAsyncIteration:
+                break
+            for stage, changes in update.items():
+                state.update(changes)
+                data = {'stage': stage, 'status': 'completed'}
+                if stage != 'plan':
+                    data['attempt'] = len(state['attempts']) + (stage != 'review')
+                yield {'event': 'stage', 'data': data}
+        result = {key: state[key] for key in ('plan', 'code', 'execution', 'review', 'attempts')}
+        yield {'event': 'complete', 'data': {
+            'success': state['attempts'][-1]['success'], 'result': result,
+        }}
+    finally:
+        await updates.aclose()
