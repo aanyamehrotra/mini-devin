@@ -27,8 +27,9 @@ existing safe HTTP 502 boundary.
 POST /chat keeps its plan/code/execution/review/attempts response fields. Each run
 starts with a fresh state and history. History is in memory for the current request:
 there is no durable checkpoint, resume API, background job or cross-request storage.
-The compiled graph supports internal stage-update streaming; no HTTP streaming
-endpoint, frontend or cancellation contract has been delivered yet.
+The compiled graph now feeds an HTTP stage-streaming endpoint; see
+[streaming contract](STREAMING.md) for event types and cooperative disconnect
+limits. Frontend rendering and durable cancellation remain pending.
 
 This integrates LangChain Core runnables, not a migration of Gemini/Groq/Ollama to
 LangChain chat models. Provider adapters continue to implement the existing BaseLLM.

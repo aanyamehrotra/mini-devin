@@ -189,3 +189,28 @@ This delivers graph orchestration and LangChain Core runnable composition, not
 LangChain chat-model adapters. State remains request-local; checkpoint/resume,
 HTTP streaming, cancellation and durable history are still pending. Next: backend
 streaming events and UI integration. Live Docker checks remain an outstanding gate.
+
+## Backend stage-streaming milestone — November 9, 2026 (IST)
+
+Started from upstream beb0bc4 in a clean isolated checkout. Added POST /chat/stream
+using SSE and the real async LangGraph update iterator. Events include started,
+completed stages/attempt numbers, complete with the normal result/history, and
+sanitized terminal errors. The synchronous endpoint remains intact. Disconnect
+checks stop subsequent stages and close the graph iterator; synchronous calls
+already running cannot be forcibly interrupted. This is not token/stdout streaming.
+
+Validation:
+- Fresh isolated environment installed requirements successfully.
+- All 61 offline tests passed (7 new streaming tests).
+- Covers SSE framing/IDs/order and final result via in-process HTTP; retry attempt
+  counts; upstream/internal error sanitization; unsuccessful completion; HTTP 422;
+  and cooperative cancellation after planning preventing generation/execution.
+- pip check: no broken requirements. Compilation and whitespace checks passed.
+- LangSmith Python 3.14 asyncio deprecation warning remains.
+- No real network chunk timing, browser disconnect/proxy behavior, live provider
+  call or live Docker execution was verified. No periodic keepalives or resume API.
+
+Implementation commit: 7a4f262. Streaming contract/progress documentation is separate.
+Next: React interface consuming stage events and rendering results/attempt history.
+Durable cancellation/history, RAG, product GitHub integration, deployment and live
+end-to-end gates still remain; November 16 is a target, not a verified completion.
