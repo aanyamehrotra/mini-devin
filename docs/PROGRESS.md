@@ -214,3 +214,31 @@ Implementation commit: 7a4f262. Streaming contract/progress documentation is sep
 Next: React interface consuming stage events and rendering results/attempt history.
 Durable cancellation/history, RAG, product GitHub integration, deployment and live
 end-to-end gates still remain; November 16 is a target, not a verified completion.
+
+## React streaming interface — November 10, 2026 (IST)
+
+Started from upstream 8ec6f6d in a fresh isolated checkout. Added a responsive
+React/Vite workspace with task submission, stage progress, execution stdout/stderr,
+review feedback, generated file previews and per-attempt inspection. Added
+AbortController-based Stop updates, clear errors, example prompts and single-run
+submission guards. SSE parsing handles arbitrary byte chunks/Unicode, CRLF,
+multiline data, terminal events, malformed payloads and premature disconnection.
+
+Validation:
+- All 14 frontend tests passed (2 test files, Vitest/Testing Library).
+- Production Vite build passed; bundle approximately 72 KiB gzipped JavaScript.
+- npm production dependency audit: 0 known vulnerabilities at check time.
+- git diff --check passed.
+- Browser desktop/mobile checks at default size and 390px width: task form and
+  responsive layout inspected; a local test SSE backend returned a sample result;
+  submission, final output and file switching verified in the actual browser.
+- Test backend was a fixture, not FastAPI/LLM/Docker. No live model, generated-code
+  execution or deployed proxy end-to-end check was performed. Existing 61 backend
+  tests were not rerun because backend code did not change.
+
+Implementation commit: 585c844. Setup/validation documentation follows separately.
+Node dependencies are exact-pinned with a lockfile. Results are in-memory only;
+production hosting, persistent history, real-model/Docker integration, RAG,
+product GitHub integration and deployment remain. Stop updates does not guarantee
+termination of already-running server operations. Next: repository-aware retrieval
+and remaining integration gaps. November 16 remains an unverified target.

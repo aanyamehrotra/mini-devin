@@ -159,3 +159,8 @@ Each component is implemented separately to explore planning, code generation, e
 See [provider setup and tests](docs/PROVIDERS.md) for Gemini, Groq and local
 Ollama configuration. Track the current work in the [roadmap](docs/ROADMAP.md)
 and [daily progress log](docs/PROGRESS.md).
+
+## React workspace
+
+See [frontend setup and verification](docs/FRONTEND.md) to run the streaming
+React interface, inspect attempts, and preview generated project files.
