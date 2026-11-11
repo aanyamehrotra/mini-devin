@@ -47,3 +47,12 @@ Core runnables. Migration to LangChain chat-model adapters is not implemented.
 Streaming API/cancellation, React UI, RAG, product GitHub integration, deployment
 and full end-to-end verification remain. The original dates are targets; the
 remaining scope is not yet verified complete for November 16.
+
+## Incremental status — November 11
+
+React stage streaming, output/file previews and attempt inspection are delivered
+with fixture-backed browser checks. Local code/docs retrieval search is delivered
+with file/line provenance and bounded ingestion. It is not yet connected to agent
+prompts or the UI. Persistent history, live model/Docker end-to-end validation,
+product GitHub integration and AWS deployment remain outstanding. Original dates
+remain delivery targets rather than a statement that these gates have passed.

@@ -242,3 +242,32 @@ production hosting, persistent history, real-model/Docker integration, RAG,
 product GitHub integration and deployment remain. Stop updates does not guarantee
 termination of already-running server operations. Next: repository-aware retrieval
 and remaining integration gaps. November 16 remains an unverified target.
+
+## Local retrieval foundation — November 11, 2026 (IST)
+
+Started at upstream fced961 in a clean temporary checkout. Implemented local
+lexical TF-IDF retrieval in the existing empty vector_store module. Deterministic
+line chunks retain source provenance; query results include excerpts/citations.
+Added POST /context/search for a server-configured RAG_ROOT only; disabled by
+default. No client-controlled filesystem root, remote fetch or paid embedding call.
+
+File policy excludes hidden/generated/dependency folders and symlinks; text type,
+file bytes, corpus bytes, file count, chunk count and excerpt size are limited.
+Search rebuilds per request to reflect edits. No secret-scanning or adversarial
+filesystem-race guarantee is claimed, and no authentication/isolation was added.
+
+Validation:
+- All 74 backend tests passed (13 new retrieval/core/API tests).
+- Fresh project requirements installed; pip check reports no broken requirements.
+- Python compilation and git diff --check passed.
+- Real repository smoke test indexed 63 files / 81 chunks without hitting limits;
+  query validate_requirements returned the requirements validator among top 5 hits
+  with relative file/line citations. Fixture ranking and provenance tests passed.
+- LangSmith Python 3.14 asyncio deprecation warning remains.
+- No live model, Docker or deployed-server verification. Frontend code was unchanged
+  and its prior 14 tests were not rerun. Retrieval API tests use in-process HTTP.
+
+Implementation commit: 0e3da0a. Retrieval/setup documentation is a separate commit.
+This is retrieval infrastructure, not completed RAG: planner/coder prompt injection,
+UI source display and generated-answer grounding are pending. No durable index or
+semantic embeddings. Next: bounded context injection with source attribution.
