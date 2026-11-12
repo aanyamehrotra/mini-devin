@@ -67,3 +67,23 @@ describe('workspace',()=>{
     expect(screen.getByLabelText('Your task').value).toBe('Print hello');
   });
 });
+
+it('keeps references off by default and submits explicit opt-in',async()=>{
+  runTask.mockImplementation(async(prompt,onEvent)=>onEvent({type:'error',data:{error:'provider_failure'}}));
+  const user=userEvent.setup();render(<App/>);
+  const checkbox=screen.getByRole('checkbox',{name:/Use project references/});
+  expect(checkbox.checked).toBe(false);
+  await user.click(checkbox);
+  await user.type(screen.getByLabelText('Your task'),'hello');
+  await user.click(screen.getByRole('button',{name:/Build project/}));
+  expect(runTask.mock.calls[0][3]).toBe(true);
+});
+
+it('shows supplied citations and excerpts without claiming proven grounding',async()=>{
+  const context={status:'ready',sources:[{citation:'guide.md:1-2',text:'A useful example',truncated:false}]};
+  runTask.mockImplementation(async(prompt,onEvent)=>onEvent({type:'complete',data:{success:true,result:{...result,context}}}));
+  await start();
+  expect(await screen.findByText('guide.md:1-2')).toBeTruthy();
+  expect(screen.getByText('A useful example')).toBeTruthy();
+  expect(screen.getByText(/do not prove the result is correct/)).toBeTruthy();
+});

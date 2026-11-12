@@ -42,10 +42,10 @@ export async function readEvents(body, onEvent, signal) {
   }
 }
 
-export async function runTask(prompt, onEvent, signal) {
+export async function runTask(prompt, onEvent, signal, useContext = false) {
   const response = await fetch('/api/chat/stream', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt }), signal,
+    body: JSON.stringify(useContext ? { prompt, use_context: true } : { prompt }), signal,
   });
   if (!response.ok) throw new Error(`The request failed (${response.status}). Check the backend and try again.`);
   if (!response.headers.get('content-type')?.includes('text/event-stream')) {

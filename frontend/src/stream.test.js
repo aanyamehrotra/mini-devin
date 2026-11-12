@@ -54,3 +54,11 @@ describe('HTTP contract', () => {
     try {await expect(runTask('hello',()=>{})).rejects.toThrow(message);} finally {fetchMock.mockRestore();}
   });
 });
+
+it('includes context opt-in only when requested', async () => {
+  const fetchMock=vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response(body([bytes(frame('cancelled',{reason:'client_disconnected'}))]),{headers:{'content-type':'text/event-stream'}}));
+  try {
+    await runTask('hello',()=>{},undefined,true);
+    expect(fetchMock).toHaveBeenCalledWith('/api/chat/stream',expect.objectContaining({body:'{"prompt":"hello","use_context":true}'}));
+  } finally {fetchMock.mockRestore();}
+});

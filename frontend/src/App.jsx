@@ -28,6 +28,10 @@ function Result({ result }) {
     <div className="output-grid"><div className="output"><h3>Output</h3><pre>{execution?.stdout || 'No standard output.'}</pre></div>
       {execution?.stderr && <div className="output error-output"><h3>Errors</h3><pre>{execution.stderr}</pre></div>}</div>
     <p className="feedback"><strong>Review</strong> {(attempt?.review || result.review)?.feedback}</p>
+    {result.context && <div className="references"><h3>References supplied</h3>
+      {result.context.status === 'ready' ? result.context.sources.map(source => <details key={source.citation}><summary>{source.citation}{source.truncated ? ' · excerpt shortened' : ''}</summary><pre>{source.text}</pre></details>) :
+        <p>{result.context.status === 'no_matches' ? 'No matching references were found.' : 'References were unavailable. This run continued without extra context.'}</p>}
+      <p>These references were supplied to the model; they do not prove the result is correct.</p></div>}
     <div className="file-panel"><div className="files" role="group" aria-label="Generated files">{files.map((f, i) =>
       <button type="button" key={`${i}-${f.path}`} className={i === fileIndex ? 'selected' : ''} aria-pressed={i === fileIndex} onClick={() => setFileIndex(i)}>{f.path}</button>)}</div>
       <pre className="code" aria-label="File contents"><code>{file?.content || 'No generated files.'}</code></pre></div>
@@ -36,6 +40,7 @@ function Result({ result }) {
 
 export default function App() {
   const [prompt, setPrompt] = useState('');
+  const [useContext, setUseContext] = useState(false);
   const [status, setStatus] = useState('idle');
   const [events, setEvents] = useState([]);
   const [message, setMessage] = useState('');
@@ -57,7 +62,7 @@ export default function App() {
         if (item.type === 'complete') {setResult(item.data.result); setStatus(item.data.success ? 'complete' : 'failed');}
         if (item.type === 'error') {setStatus('error'); setMessage(errorMessages[item.data.error] || 'The task could not be completed. Please try again.');}
         if (item.type === 'cancelled') {setStatus('stopped'); setMessage('Updates stopped. Work already running may finish.');}
-      }, request.signal);
+      }, request.signal, useContext);
     } catch (error) {
       if (error.name === 'AbortError') {setStatus('stopped'); setMessage('Updates stopped. Work already running may finish.');}
       else {setStatus('error'); setMessage(error.message || 'The request could not be completed.');}
@@ -80,6 +85,7 @@ export default function App() {
           {busy ? <button type="button" className="stop" onClick={() => controller.current?.abort()}>Stop updates</button> :
             <button className="primary" type="submit" disabled={!prompt.trim()}>Build project <span>↗</span></button>}</div>
       </form>
+      <label className="context-toggle"><input type="checkbox" checked={useContext} disabled={busy} onChange={e => setUseContext(e.target.checked)}/><span>Use project references<small>Excerpts from the configured code/docs are sent to your model provider.</small></span></label>
       {status === 'idle' && <div className="examples"><span>Try a starting point</span>{examples.map(example => <button type="button" key={example} onClick={() => setPrompt(example)}>{example} <span>↗</span></button>)}</div>}
       <section className="progress" aria-label="Agent progress"><div className="section-heading"><h2>The workflow</h2>
         <span className="workflow-state" role="status">{busy ? `Working${last ? ` · attempt ${last.attempt || 1}` : ''}` :
