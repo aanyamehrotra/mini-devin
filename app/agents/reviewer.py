@@ -1,3 +1,4 @@
+from app.memory.context import with_references
 from app.models.schemas import (
     Plan,
     ExecutionResult,
@@ -11,7 +12,8 @@ def review_code(
     plan: Plan,
     code: CodeResponse,
     execution: ExecutionResult,
-    user_request
+    user_request,
+    context=None,
 ) -> ReviewResult:
 
 
@@ -65,4 +67,4 @@ failure_source must be exactly:
 No markdown. No explanation outside the JSON.
 """
 
-    return generate_structured(prompt, ReviewResult, "reviewer")
+    return generate_structured(with_references(prompt, context), ReviewResult, "reviewer")

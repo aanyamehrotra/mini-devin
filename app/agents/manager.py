@@ -1,6 +1,7 @@
 """LangGraph orchestration for bounded, review-driven project generation."""
 
 from typing import TypedDict
+from app.memory.context import retrieve_context
 
 from app.agents.planner import plan_task
 from app.agents.coder import write_code, rewrite_code
@@ -13,6 +14,8 @@ MAX_RETRIES = 3  # Total execution attempts, including the first generation.
 
 class AgentState(TypedDict, total=False):
     user_prompt: str
+    use_context: bool
+    context: dict | None
     plan: Plan
     code: CodeResponse
     execution: ExecutionResult
@@ -28,13 +31,16 @@ def build_graph(max_attempts: int = MAX_RETRIES):
         raise ValueError('max_attempts must be a positive integer')
 
     def plan(state):
-        return {'plan': plan_task(state['user_prompt'])}
+        context = retrieve_context(state['user_prompt']) if state.get('use_context') else None
+        kwargs = {'context': context} if context else {}
+        return {'plan': plan_task(state['user_prompt'], **kwargs), 'context': context}
 
     def generate(state):
+        kwargs = {'context': state['context']} if state.get('context') else {}
         if state['attempts']:
-            code = rewrite_code(state['plan'], state['code'], state['review'].feedback)
+            code = rewrite_code(state['plan'], state['code'], state['review'].feedback, **kwargs)
         else:
-            code = write_code(state['plan'], state['user_prompt'])
+            code = write_code(state['plan'], state['user_prompt'], **kwargs)
         return {'code': code}
 
     def execute(state):
@@ -47,7 +53,8 @@ def build_graph(max_attempts: int = MAX_RETRIES):
             result = ReviewResult(success=False, feedback=execution.stderr,
                                   failure_source='execution_environment')
         else:
-            result = review_code(state['plan'], state['code'], execution, state['user_prompt'])
+            kwargs = {'context': state['context']} if state.get('context') else {}
+            result = review_code(state['plan'], state['code'], execution, state['user_prompt'], **kwargs)
             if result.success and not execution.success:
                 result = ReviewResult(success=False,
                                       feedback='Execution failed despite review approval. ' + execution.stderr,
@@ -78,20 +85,20 @@ def build_graph(max_attempts: int = MAX_RETRIES):
     return graph.compile()
 
 
-def run_agent(user_prompt: str):
+def run_agent(user_prompt: str, *, use_context: bool = False):
     state = build_graph(MAX_RETRIES).invoke(
-        {'user_prompt': user_prompt, 'attempts': []},
+        {'user_prompt': user_prompt, 'attempts': [], 'use_context': use_context},
         config={'recursion_limit': 3 * MAX_RETRIES + 3},
     )
-    return {key: state[key] for key in ('plan', 'code', 'execution', 'review', 'attempts')}
+    return agent_result(state)
 
 
-async def stream_agent(user_prompt: str, *, cancelled=None):
+async def stream_agent(user_prompt: str, *, cancelled=None, use_context: bool = False):
     """Stream completed stages and a terminal result; cancel between stages.
 
     Synchronous provider/executor calls already running cannot be forcibly stopped.
     """
-    state = {'user_prompt': user_prompt, 'attempts': []}
+    state = {'user_prompt': user_prompt, 'attempts': [], 'use_context': use_context}
     updates = build_graph(MAX_RETRIES).astream(
         state, stream_mode='updates',
         config={'recursion_limit': 3 * MAX_RETRIES + 3},
@@ -111,9 +118,16 @@ async def stream_agent(user_prompt: str, *, cancelled=None):
                 if stage != 'plan':
                     data['attempt'] = len(state['attempts']) + (stage != 'review')
                 yield {'event': 'stage', 'data': data}
-        result = {key: state[key] for key in ('plan', 'code', 'execution', 'review', 'attempts')}
+        result = agent_result(state)
         yield {'event': 'complete', 'data': {
             'success': state['attempts'][-1]['success'], 'result': result,
         }}
     finally:
         await updates.aclose()
+
+
+def agent_result(state):
+    result = {key: state[key] for key in ('plan', 'code', 'execution', 'review', 'attempts')}
+    if state.get('context') is not None:
+        result['context'] = state['context']
+    return result

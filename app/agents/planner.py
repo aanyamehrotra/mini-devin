@@ -1,8 +1,9 @@
+from app.memory.context import with_references
 from app.models.schemas import Plan
 from app.services.llm.structured import generate_structured
 
 
-def plan_task(user_request: str) -> Plan:
+def plan_task(user_request: str, context=None) -> Plan:
 
 
     prompt = f"""
@@ -39,4 +40,4 @@ def plan_task(user_request: str) -> Plan:
     Incorrect: "Print a greeting message"
     """
 
-    return generate_structured(prompt, Plan, "planner")
+    return generate_structured(with_references(prompt, context), Plan, "planner")

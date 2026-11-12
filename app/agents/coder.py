@@ -1,8 +1,9 @@
+from app.memory.context import with_references
 from app.models.schemas import Plan, CodeResponse
 from app.services.llm.structured import generate_structured
 
 
-def write_code(plan: Plan, user_request) -> CodeResponse:
+def write_code(plan: Plan, user_request, context=None) -> CodeResponse:
 
     prompt = f"""
     You are the Coder Agent in an autonomous software engineering system.
@@ -52,12 +53,13 @@ def write_code(plan: Plan, user_request) -> CodeResponse:
 
     Return JSON only. No markdown or explanation.
     """
-    return generate_structured(prompt, CodeResponse, "coder")
+    return generate_structured(with_references(prompt, context), CodeResponse, "coder")
 
 def rewrite_code(
     plan: Plan,
     previous_code: CodeResponse,
     review: str,
+    context=None,
 ) -> CodeResponse:
 
 
@@ -106,4 +108,4 @@ FIXING RULES:
 Return JSON only. No markdown or explanation.
 """
 
-    return generate_structured(prompt, CodeResponse, "rewrite")
+    return generate_structured(with_references(prompt, context), CodeResponse, "rewrite")

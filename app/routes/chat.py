@@ -13,7 +13,7 @@ router = APIRouter()
 @router.post("/chat")
 def chat(request: ChatRequest):
     try:
-        return run_agent(request.prompt)
+        return run_agent(request.prompt, use_context=True) if request.use_context else run_agent(request.prompt)
     except AgentResponseError as error:
         raise HTTPException(
             status_code=502,
@@ -33,7 +33,7 @@ async def chat_stream(body: ChatRequest, request: Request):
 
         yield encode('started', {'status': 'running'})
         try:
-            async for item in stream_agent(body.prompt, cancelled=request.is_disconnected):
+            async for item in stream_agent(body.prompt, cancelled=request.is_disconnected, use_context=body.use_context):
                 yield encode(item['event'], item['data'])
         except AgentResponseError as error:
             yield encode('error', {'error': error.kind, 'stage': error.stage})

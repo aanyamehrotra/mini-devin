@@ -1,9 +1,10 @@
 from typing import List
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Literal
 
 class ChatRequest(BaseModel):
     prompt: str
+    use_context: bool = Field(default=False, strict=True)
   
 class Plan(BaseModel):
     goal: str
