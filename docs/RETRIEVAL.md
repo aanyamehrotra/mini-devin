@@ -59,8 +59,44 @@ ties and top_k, binary/large files, corpus/chunk budgets, truncation, invalid ch
 settings, HTTP configuration failures, relative sources and refresh after file edits.
 A repository smoke test found the requirements validator among five ranked hits.
 
-Retrieval is not automatically added to planner/coder prompts yet, and no source
-viewer/search control is delivered in React. There is no persistent index or
-semantic paraphrase matching. Generated answers are not yet source-grounded by
-this change. Next is bounded context injection with source attribution and tests;
-retrieved text must be treated as untrusted reference content rather than instructions.
+## Opt-in agent context
+
+`POST /chat` and `POST /chat/stream` accept an optional strict boolean
+`use_context`, default false. Example:
+
+```json
+{"prompt":"Build a Docker timeout helper", "use_context":true}
+```
+
+The React checkbox **Use project references** sends that flag. It starts unchecked
+and explains that excerpts are sent to the selected model provider. Configuring
+RAG_ROOT alone enables search but does not cause normal agent requests to send
+corpus content to a model. Only opt in with a corpus appropriate for that provider.
+
+Enabled runs retrieve once during planning, then reuse the same snapshot in
+planning, initial coding, rewrites and review. Context uses at most three sources,
+3000 text characters per source, and 12,000 serialized source-list characters.
+The retrieval query uses the first 2000 prompt characters; the original user
+request is preserved for the agents. References are JSON-encoded, explicitly
+marked untrusted, and instructed not to override the user request/output schema.
+This prompting is not a guarantee against prompt injection.
+
+Configured context adds a `context` object to the normal result, or to the SSE
+complete event's result. It has status ready, no_matches or unavailable and a
+sources list containing the bounded text and citation metadata. Missing/unavailable
+corpus configuration does not abort generation; that status is returned so clients
+can see that no extra context was supplied. Disabled requests preserve the previous
+five-field response shape and never call the retrieval index.
+
+The React result view labels these **References supplied**, with expandable
+citations/excerpts and explicit no-match/unavailable messages. This is input
+attribution, not proof of actual model usage or generated-code correctness. There
+is no requirement for models to generate output citations, no persistent index,
+and no semantic paraphrase matching. Corpus content can itself contain errors or
+sensitive data; existing file exclusions do not replace corpus curation.
+
+Tests cover default-off behavior, excerpt limits, unavailable/no-match status,
+prompt labeling/encoding across all four agents, one retrieval per request,
+reference reuse through rewrites, sync/SSE result attribution, strict boolean
+validation, and UI request opt-in/source display. No live model grounding quality,
+Docker execution or deployed browser-to-model integration was verified.

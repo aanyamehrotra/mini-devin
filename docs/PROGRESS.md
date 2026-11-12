@@ -271,3 +271,34 @@ Implementation commit: 0e3da0a. Retrieval/setup documentation is a separate comm
 This is retrieval infrastructure, not completed RAG: planner/coder prompt injection,
 UI source display and generated-answer grounding are pending. No durable index or
 semantic embeddings. Next: bounded context injection with source attribution.
+
+## Opt-in RAG workflow integration — November 12, 2026 (IST)
+
+Started at upstream 277d14f in a fresh isolated checkout. Added strict per-request
+use_context (default false); RAG_ROOT alone does not send corpus data to a model.
+Enabled runs retrieve once during planning and reuse bounded source excerpts in
+planner/coder/rewrite/reviewer prompts. References are JSON-encoded and labeled
+untrusted; this is not a prompt-injection immunity guarantee.
+
+Both normal and streaming final results expose context status and supplied source
+metadata/text. No-match/unavailable corpus continues without extra context and
+reports that condition. Disabled requests preserve their prior response shape.
+React now has a default-off opt-in checkbox explaining provider data sharing and
+expandable References supplied, with an attribution-not-proof notice.
+
+Validation:
+- All 85 backend tests passed (11 new context-boundary/workflow/API tests).
+- All 17 frontend tests passed (3 new opt-in/request/source-display tests).
+- Fresh Python requirements and npm lockfile installs succeeded. pip check has no
+  broken requirements; npm install audit reported 0 vulnerabilities at check time.
+- Frontend production build, Python compilation and whitespace checks passed.
+- Tests exercise real LangGraph and in-process HTTP with stubbed providers/executor;
+  frontend tests mock the transport. No live model, Docker or deployed browser-to-
+  model validation. No fresh visual browser check for this small UI addition.
+- Existing LangSmith asyncio deprecation warning under Python 3.14 remains.
+
+Backend commit: 2552f0d. Frontend commit: 6af2f44. Setup/progress docs separate.
+This connects retrieval to generation; source lists establish supplied inputs,
+not verified grounding quality. Semantic embeddings, durable run history, product
+GitHub integration, AWS deployment and live execution gates remain. Next: scoped
+GitHub integration and deployment preparation. November 16 remains a target.

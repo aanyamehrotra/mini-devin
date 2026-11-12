@@ -66,3 +66,10 @@ TestClient buffers responses; those HTTP tests alone do not prove network chunk
 arrival timing or an in-flight operation being stopped.
 
 Reference: [LangGraph streaming](https://docs.langchain.com/oss/python/langgraph/streaming).
+
+## Optional retrieval attribution
+
+The request may include `use_context:true` (strict boolean, default false). Enabled
+runs add `context` to the final result with status and bounded source excerpts.
+Progress event types/order remain the same; retrieval happens once during planning.
+See [retrieval configuration and provider data sharing](RETRIEVAL.md).

@@ -53,9 +53,9 @@ npm run build
 npm audit --omit=dev
 ```
 
-The 14 frontend tests cover fragmented/Unicode/CRLF/multiline SSE data, terminal
+The 17 frontend tests cover fragmented/Unicode/CRLF/multiline SSE data, terminal
 and transport errors, premature EOF, invalid results, aborts, example prompts,
-result rendering, file/attempt selection, provider failures and stopping updates.
+result rendering, file/attempt selection, provider failures, stopping updates, reference opt-in and source display.
 Component tests mock the transport; parser tests use ReadableStream byte fixtures.
 Browser checks used a local mock SSE backend to inspect desktop/mobile layout,
 submit a sample and switch generated files. They do not verify live model output
@@ -68,3 +68,11 @@ production build or `vite preview`. No site was deployed by this milestone.
 Authentication, deployed browser end-to-end checks and durable history remain
 future work. Do not expose the arbitrary-code backend publicly without its
 remaining execution and access-control work.
+
+## Optional references
+
+Use project references is off by default. Enable it only to send excerpts from the
+backend's configured RAG_ROOT corpus to the selected model provider. Results show
+expandable References supplied with citation ranges and shortened-excerpt labels.
+Unavailable/no-match states are explicit. Source attribution does not establish
+that the model used a reference correctly. See [retrieval](RETRIEVAL.md).

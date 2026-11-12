@@ -56,3 +56,12 @@ with file/line provenance and bounded ingestion. It is not yet connected to agen
 prompts or the UI. Persistent history, live model/Docker end-to-end validation,
 product GitHub integration and AWS deployment remain outstanding. Original dates
 remain delivery targets rather than a statement that these gates have passed.
+
+## Incremental status — November 12
+
+Opt-in retrieval context now reaches planner/coder/rewrite/reviewer prompts and
+source attribution returns through both API workflows. React exposes opt-in and
+supplied sources. Offline checks passed; live grounding quality is not established.
+Remaining priority work: product GitHub integration, deployment preparation,
+remaining execution safeguards and live integration gates. Persistent run history
+and actual AWS deployment are not delivered. November 16 remains an unverified target.
