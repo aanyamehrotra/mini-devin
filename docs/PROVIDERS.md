@@ -62,3 +62,14 @@ object containing `error` and `stage`. Error kinds are `provider_failure`,
 `coder`, `rewrite` and `reviewer`. Public errors omit provider exception messages
 and raw generated output. Clients should display the stage and allow a new request.
 These failures stop the request; they do not consume the code execution retry loop.
+
+## Groq model selection
+
+GROQ_MODEL is configurable; its default is openai/gpt-oss-20b. On November 13,
+the previously hardcoded groq/compound-mini returned HTTP 404 and was absent from
+the account's models list. The supported configured replacement passed a real
+connection test and a complete plan/code/Docker/review task in one attempt.
+This verifies one simple task on Groq, not all providers or model quality cases.
+Groq SDK calls use a 30-second timeout and disable hidden SDK retries; the existing
+explicit rate-limit retry policy remains. Configure keys only in the ignored .env
+or process environment, never in source or frontend bundles.

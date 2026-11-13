@@ -350,3 +350,22 @@ model-driven end-to-end verification.
 No Groq/Gemini key or product GitHub export token was configured in this session.
 The user chose to configure a Groq/Gemini key locally; provider testing awaits that
 setup. The private canonical checkout .env is local-only and ignored by Git.
+
+## Live provider-to-executor follow-up — November 13
+
+Configured the user-supplied Groq credential only in the private ignored canonical
+.env; no credential value is included in this repository or report. Initial live
+connection returned HTTP 404 for hardcoded groq/compound-mini. Account model listing
+confirmed supported alternatives; made GROQ_MODEL configurable, selected
+openai/gpt-oss-20b, and added a mocked configuration/timeout regression test.
+
+A real connection marker check passed. A complete real manager workflow then
+planned, generated one Python file, executed it through Docker and reviewed it:
+exact stdout MINI_DEVIN_LIVE_OK, execution success, reviewer success, one attempt.
+This is evidence for one simple Groq task, not broad provider/quality validation.
+
+After the model change, the standard suite ran 107 tests: 100 offline tests passed
+and 7 opt-in Docker cases were skipped. All seven Docker cases had separately
+passed live earlier today. Python compilation and git diff --check passed.
+Gemini/Ollama live requests, UI-to-model interaction, live product GitHub export,
+deployment and remaining execution/access protections still require verification.

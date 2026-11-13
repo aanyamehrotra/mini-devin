@@ -1,14 +1,14 @@
 import time
 from groq import Groq, RateLimitError
 
-from app.config import GROQ_API_KEY
+from app.config import GROQ_API_KEY, GROQ_MODEL
 from app.services.llm.base import BaseLLM
 
 
 class GroqLLM(BaseLLM):
 
     def __init__(self):
-        self.client = Groq(api_key=GROQ_API_KEY)
+        self.client = Groq(api_key=GROQ_API_KEY, timeout=30, max_retries=0)
 
     def generate(self, prompt: str) -> str:
 
@@ -17,7 +17,7 @@ class GroqLLM(BaseLLM):
         for attempt in range(max_retries):
             try:
                 response = self.client.chat.completions.create(
-                    model="groq/compound-mini",
+                    model=GROQ_MODEL,
                     messages=[
                         {
                             "role": "user",

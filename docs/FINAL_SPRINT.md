@@ -39,3 +39,11 @@ Docker Desktop has now been started and engine 29.6.1 responds. The previous mis
 Docker socket blocker is cleared; real fixture validation is in progress.
 Durable run history, browser GitHub export/OAuth and public deployment protections
 must be evaluated explicitly rather than assumed complete from CLI functionality.
+
+## November 13 evidence update
+
+All seven real Docker fixtures passed. The configured Groq model was repaired after
+a 404; a real plan/code/Docker/review task passed in one attempt with exact expected
+output. The private ignored canonical .env holds the provider configuration. These
+checks clear the old missing Docker/key blockers for this local setup; AWS account
+and budget, live GitHub export, deployed integration and broader validation remain.
