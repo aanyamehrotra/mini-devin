@@ -302,3 +302,31 @@ This connects retrieval to generation; source lists establish supplied inputs,
 not verified grounding quality. Semantic embeddings, durable run history, product
 GitHub integration, AWS deployment and live execution gates remain. Next: scoped
 GitHub integration and deployment preparation. November 16 remains a target.
+
+## Preview-first GitHub export — November 13, 2026 (IST)
+
+Started at upstream 6a22318 in a clean temporary checkout. Added a separate CLI
+export flow: explicit repository allowlist, offline preview default, --apply for
+writes and optional --create-pr for draft review. Exports go to a new UUID folder
+and branch, preserving the base tree and commit parent. No existing-ref update,
+force-push, deletion or merge. Added path/content limits and sanitized transport
+with bounded requests, no redirects or automatic write retries. Ambiguous branch
+writes return recovery information; PR failures retain the successfully created
+branch/commit/compare URL. No automatic agent-loop publication or HTTP write route.
+
+Validation:
+- All 99 backend tests passed (14 new GitHub export tests).
+- First environment installation failed under restricted network access; the
+  initial suite could not import missing packages. Installation succeeded with
+  network access, and the complete suite was then rerun successfully.
+- pip check: no broken requirements. Compilation and git diff --check passed.
+- Preview/CLI checks perform no network calls; publication tests mock GitHub.
+- No live generated-project export or draft PR created; token scopes, actual
+  repository rules and GitHub write behavior remain integration-test gates.
+- Frontend unchanged; its prior 17 tests were not rerun. No live model/Docker test.
+- Existing LangSmith Python 3.14 asyncio deprecation warning remains.
+
+This milestone is one cohesive implementation/documentation commit. Product
+integration is CLI-only, not OAuth or browser export. Next: deployment preparation,
+health/readiness checks and remaining live execution gaps. Persistent history and
+actual AWS deployment remain absent. November 16 is still an unverified target.

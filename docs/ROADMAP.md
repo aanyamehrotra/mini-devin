@@ -65,3 +65,12 @@ supplied sources. Offline checks passed; live grounding quality is not establish
 Remaining priority work: product GitHub integration, deployment preparation,
 remaining execution safeguards and live integration gates. Persistent run history
 and actual AWS deployment are not delivered. November 16 remains an unverified target.
+
+## Incremental status — November 13
+
+Product GitHub export is now available as a preview-first CLI with explicit apply,
+new branch/project-folder scope and optional draft PR. It is offline-tested only;
+no live generated-project export was performed. Browser export/OAuth, persistent
+run history, actual AWS deployment and live model/Docker end-to-end gates remain.
+The next priority is deployable configuration and readiness checks, followed by
+final verification and a precise completion/gap report.
