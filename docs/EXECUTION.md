@@ -58,3 +58,21 @@ library validation. Python libraries without a recognized entry file are compile
 but not executed. Nested entry discovery is deterministic. Offline multi-file tests
 verify file writes, entry selection, failure routing and distinct workspaces; they
 do not run generated imports in a real container.
+
+## Real Docker fixture verification — November 13
+
+Docker Desktop engine 29.6.1 was started and the official python:3.12-slim image
+pulled. All seven opt-in tests in tests/test_live_docker.py passed: nested imports,
+module/library compilation, syntax and runtime error classification, no-network
+runtime, installed dependency imports, and a 30-second timeout with no surviving
+new container. These are real engine checks, not mocked subprocess results.
+
+To run them intentionally after starting Docker and pulling the image:
+
+```sh
+MINI_DEVIN_LIVE_DOCKER=1 .venv/bin/python -m unittest tests.test_live_docker -v
+```
+
+The default suite skips them. Tests do not call a model provider. They do not prove
+all resource/escape protections, bounded output handling, or public deployment
+safety. Those remain separate gates. The live run took about 47 seconds.

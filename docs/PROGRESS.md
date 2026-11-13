@@ -330,3 +330,23 @@ This milestone is one cohesive implementation/documentation commit. Product
 integration is CLI-only, not OAuth or browser export. Next: deployment preparation,
 health/readiness checks and remaining live execution gaps. Persistent history and
 actual AWS deployment remain absent. November 16 is still an unverified target.
+
+## Final-target follow-up and real execution gate — November 13
+
+The user reaffirmed November 16 as the final deadline. Updated the saved daily
+instructions and added FINAL_SPRINT.md with acceptance evidence and priorities.
+The user does not yet know their AWS account/budget; no paid provisioning is
+approved. Prepare deployment artifacts without spending; keep actual AWS launch
+an explicit outstanding dependency.
+
+Started Docker Desktop through the native app. Engine 29.6.1 now responds; pulled
+the official python:3.12-slim image. Added seven opt-in live fixture tests and ran
+all seven successfully (about 47 seconds): real dependency imports, nested
+multi-file execution, module compilation, syntax/runtime failures, runtime network
+denial, and timeout cleanup with no surviving new containers. This clears the
+previous missing Docker service blocker, but is not a complete sandbox audit or
+model-driven end-to-end verification.
+
+No Groq/Gemini key or product GitHub export token was configured in this session.
+The user chose to configure a Groq/Gemini key locally; provider testing awaits that
+setup. The private canonical checkout .env is local-only and ignored by Git.
