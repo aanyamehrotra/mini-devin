@@ -42,11 +42,12 @@ export async function readEvents(body, onEvent, signal) {
   }
 }
 
-export async function runTask(prompt, onEvent, signal, useContext = false) {
+export async function runTask(prompt, onEvent, signal, useContext = false, accessToken = '') {
   const response = await fetch('/api/chat/stream', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    method: 'POST', headers: { 'Content-Type': 'application/json', ...(accessToken ? {Authorization: `Bearer ${accessToken}`} : {}) },
     body: JSON.stringify(useContext ? { prompt, use_context: true } : { prompt }), signal,
   });
+  if (response.status === 401) throw new Error('Enter the workspace access token to continue.');
   if (!response.ok) throw new Error(`The request failed (${response.status}). Check the backend and try again.`);
   if (!response.headers.get('content-type')?.includes('text/event-stream')) {
     throw new Error('The backend returned an unexpected response.');

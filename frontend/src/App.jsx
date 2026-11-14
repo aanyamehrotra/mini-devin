@@ -41,6 +41,7 @@ function Result({ result }) {
 export default function App() {
   const [prompt, setPrompt] = useState('');
   const [useContext, setUseContext] = useState(false);
+  const [accessToken, setAccessToken] = useState('');
   const [status, setStatus] = useState('idle');
   const [events, setEvents] = useState([]);
   const [message, setMessage] = useState('');
@@ -62,7 +63,7 @@ export default function App() {
         if (item.type === 'complete') {setResult(item.data.result); setStatus(item.data.success ? 'complete' : 'failed');}
         if (item.type === 'error') {setStatus('error'); setMessage(errorMessages[item.data.error] || 'The task could not be completed. Please try again.');}
         if (item.type === 'cancelled') {setStatus('stopped'); setMessage('Updates stopped. Work already running may finish.');}
-      }, request.signal, useContext);
+      }, request.signal, useContext, accessToken);
     } catch (error) {
       if (error.name === 'AbortError') {setStatus('stopped'); setMessage('Updates stopped. Work already running may finish.');}
       else {setStatus('error'); setMessage(error.message || 'The request could not be completed.');}
@@ -85,6 +86,7 @@ export default function App() {
           {busy ? <button type="button" className="stop" onClick={() => controller.current?.abort()}>Stop updates</button> :
             <button className="primary" type="submit" disabled={!prompt.trim()}>Build project <span>↗</span></button>}</div>
       </form>
+      <details className="access-settings"><summary>Workspace access</summary><label htmlFor="access-token">Workspace access token (if configured)</label><input id="access-token" type="password" value={accessToken} disabled={busy} autoComplete="off" onChange={e => setAccessToken(e.target.value)}/><p>This is a workspace password, not your model API key. It stays in memory until you close or reload this page.</p></details>
       <label className="context-toggle"><input type="checkbox" checked={useContext} disabled={busy} onChange={e => setUseContext(e.target.checked)}/><span>Use project references<small>Excerpts from the configured code/docs are sent to your model provider.</small></span></label>
       {status === 'idle' && <div className="examples"><span>Try a starting point</span>{examples.map(example => <button type="button" key={example} onClick={() => setPrompt(example)}>{example} <span>↗</span></button>)}</div>}
       <section className="progress" aria-label="Agent progress"><div className="section-heading"><h2>The workflow</h2>

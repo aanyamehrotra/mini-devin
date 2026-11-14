@@ -62,3 +62,18 @@ it('includes context opt-in only when requested', async () => {
     expect(fetchMock).toHaveBeenCalledWith('/api/chat/stream',expect.objectContaining({body:'{"prompt":"hello","use_context":true}'}));
   } finally {fetchMock.mockRestore();}
 });
+
+it('sends the workspace token only as an authorization header', async () => {
+  const fetchMock=vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response(body([bytes(frame('cancelled',{reason:'client_disconnected'}))]),{headers:{'content-type':'text/event-stream'}}));
+  try {
+    await runTask('hello',()=>{},undefined,false,'workspace-fixture');
+    const options=fetchMock.mock.calls[0][1];
+    expect(options.headers.Authorization).toBe('Bearer workspace-fixture');
+    expect(options.body).not.toContain('workspace-fixture');
+  } finally {fetchMock.mockRestore();}
+});
+
+it('explains access-token failures',async()=>{
+  const fetchMock=vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response('',{status:401}));
+  try {await expect(runTask('hello',()=>{})).rejects.toThrow('workspace access token');} finally {fetchMock.mockRestore();}
+});

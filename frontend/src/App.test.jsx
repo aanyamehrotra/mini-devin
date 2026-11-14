@@ -87,3 +87,14 @@ it('shows supplied citations and excerpts without claiming proven grounding',asy
   expect(screen.getByText('A useful example')).toBeTruthy();
   expect(screen.getByText(/do not prove the result is correct/)).toBeTruthy();
 });
+
+it('passes an optional workspace token from memory',async()=>{
+  runTask.mockImplementation(async(prompt,onEvent)=>onEvent({type:'error',data:{error:'provider_failure'}}));
+  const user=userEvent.setup();render(<App/>);
+  await user.click(screen.getByText('Workspace access'));
+  await user.type(screen.getByLabelText('Workspace access token (if configured)'),'workspace-fixture');
+  await user.type(screen.getByLabelText('Your task'),'hello');
+  await user.click(screen.getByRole('button',{name:/Build project/}));
+  expect(runTask.mock.calls[0][4]).toBe('workspace-fixture');
+  expect(screen.getByLabelText('Workspace access token (if configured)').type).toBe('password');
+});
