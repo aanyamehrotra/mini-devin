@@ -1,0 +1,21 @@
+[Unit]
+Description=Mini-Devin private coding workspace
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+User=minidevin
+Group=minidevin
+WorkingDirectory=/opt/mini-devin
+EnvironmentFile=/etc/mini-devin.env
+ExecStartPre=/opt/mini-devin/.venv/bin/python -m app.tools.preflight --deployment
+ExecStart=/opt/mini-devin/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --workers 1
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

@@ -369,3 +369,36 @@ and 7 opt-in Docker cases were skipped. All seven Docker cases had separately
 passed live earlier today. Python compilation and git diff --check passed.
 Gemini/Ollama live requests, UI-to-model interaction, live product GitHub export,
 deployment and remaining execution/access protections still require verification.
+
+## Deployment/readiness preparation — November 14, 2026 (IST)
+
+Started at upstream ef100df in a clean checkout. Added production React asset
+serving, same-origin /api aliases, optional pure-ASGI Bearer access guard covering
+both route families, health/live + health/ready, and deployment preflight. The UI
+accepts a separate in-memory workspace token, not a provider API key. Added Linux
+systemd/private nginx templates and a fully resolved Python dependency snapshot.
+No Linux service installation, AWS resource creation or public exposure performed.
+
+Validation:
+- 111 offline backend tests passed; seven existing opt-in Docker tests skipped.
+- All 20 frontend tests passed; production Vite build passed (~72.5 KiB gzipped JS).
+- Added two opt-in real HTTP integration tests; both passed with an ephemeral local
+  server/token, actual built assets, real Groq and real Docker. Verified readiness,
+  unauthenticated rejection and authenticated SSE exact output.
+- The first preflight saw Docker still starting and returned false. After startup,
+  real deployment preflight passed provider config, Docker, token length and UI checks.
+- Fresh installs succeeded after restricted-network installation was retried with
+  network access. pip check found no broken requirements; compilation/whitespace passed.
+- No new visual browser check, Linux systemd/nginx execution or AWS deployment test.
+- LangSmith Python 3.14 asyncio deprecation warning remains.
+
+Backend commit: 094be46. Frontend commit: e737f36. Deployment docs/templates and
+lock snapshot follow separately. Model credentials remain only in the ignored
+canonical .env, loaded into test processes without printing or committing them.
+No emails sent, per the user's instruction.
+
+Remaining: actual account/target/budget for AWS; Linux/proxy validation; persistent
+run history; live product GitHub export; broader provider/quality and browser E2E
+coverage; remaining execution output/disk/concurrency protections. A shared token
+and these local checks do not establish public multi-tenant sandbox readiness.
+November 16 remains the final target with evidence-based gap reporting.

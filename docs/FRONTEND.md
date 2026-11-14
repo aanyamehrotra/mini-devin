@@ -61,9 +61,8 @@ Browser checks used a local mock SSE backend to inspect desktop/mobile layout,
 submit a sample and switch generated files. They do not verify live model output
 or Docker. Existing 61 backend tests were not rerun for this frontend-only change.
 
-`npm run build` writes ignored `dist/` assets. Production hosting must serve the
-assets and reverse-proxy `/api/*` to FastAPI with the `/api` prefix removed and
-streaming buffering disabled. Vite's development proxy does NOT apply to a static
+`npm run build` writes ignored `dist/` assets. A separate static-host setup must proxy `/api/*` to a compatible FastAPI route
+with streaming buffering disabled, or use the unified backend service described below. Vite's development proxy does NOT apply to a static
 production build or `vite preview`. No site was deployed by this milestone.
 Authentication, deployed browser end-to-end checks and durable history remain
 future work. Do not expose the arbitrary-code backend publicly without its
@@ -76,3 +75,11 @@ backend's configured RAG_ROOT corpus to the selected model provider. Results sho
 expandable References supplied with citation ranges and shortened-excerpt labels.
 Unavailable/no-match states are explicit. Source attribution does not establish
 that the model used a reference correctly. See [retrieval](RETRIEVAL.md).
+
+## Unified production service
+
+The backend now serves frontend/dist and same-origin /api aliases after a build.
+A separate static host/proxy is optional, not required for local startup. Workspace
+access accepts a separate in-memory token when the backend requires one; no token
+is baked into the build. See [deployment setup](DEPLOYMENT.md) for authentication,
+preflight and private-host templates. Current frontend suite: 20 passing tests.

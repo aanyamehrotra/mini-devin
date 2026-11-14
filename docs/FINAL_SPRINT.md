@@ -47,3 +47,11 @@ a 404; a real plan/code/Docker/review task passed in one attempt with exact expe
 output. The private ignored canonical .env holds the provider configuration. These
 checks clear the old missing Docker/key blockers for this local setup; AWS account
 and budget, live GitHub export, deployed integration and broader validation remain.
+
+## November 14 evidence update
+
+Production UI and API now share one origin with optional access protection and
+readiness checks. The local HTTP-to-Groq-to-Docker streamed workflow passed, as
+did static assets/health/authentication checks. Linux service/private proxy templates
+and dependency snapshot are prepared, not installed or cloud-deployed. AWS access
+and budget remain unresolved; no paid resources or public endpoint were created.
