@@ -1,3 +1,4 @@
+from contextlib import nullcontext
 import subprocess
 import tempfile
 import unittest
@@ -9,6 +10,8 @@ from app.executor.docker_runner import run_in_docker, validate_in_docker
 
 class DockerTests(unittest.TestCase):
     def setUp(self):
+        volume=patch('app.executor.docker_runner.dependency_volume',side_effect=lambda:nullcontext('mini-devin-deps-fixture'))
+        volume.start();self.addCleanup(volume.stop)
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)

@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 import subprocess
 import uuid
-import tempfile
+from contextlib import contextmanager
 from app.executor.capture import capture_output
 
 from app.executor.requirements import validate_requirements
@@ -19,7 +19,7 @@ def _run(project_dir, command, *, network='none', dependencies=None, install=Fal
     root = Path(project_dir).resolve()
     name = f'mini-devin-{uuid.uuid4().hex}'
     docker_command = [
-        'docker', 'run', '--rm', '--name', name, '--init',
+        'docker', 'run', '--rm', '--name', name, '--init', '--log-driver', 'none',
         '--memory', '256m', '--memory-swap', '256m', '--cpus', '0.5',
         '--pids-limit', '64', '--cap-drop', 'ALL',
         '--security-opt', 'no-new-privileges', '--read-only',
@@ -27,12 +27,13 @@ def _run(project_dir, command, *, network='none', dependencies=None, install=Fal
         '--user', f'{os.getuid() or 65534}:{os.getgid() or 65534}', '--network', network,
         '-e', 'HOME=/tmp', '-e', 'PYTHONPYCACHEPREFIX=/tmp/pycache',
         '-e', 'PYTHONPATH=/deps',
-        '-v', f'{root}:/app', '-w', '/app', IMAGE, *command,
+        '-v', f'{root}:/source:ro', '-w', '/tmp', IMAGE,
+        'python', '-c', "import os,shutil,sys; shutil.copytree('/source','/tmp/project'); os.chdir('/tmp/project'); os.execvp(sys.argv[1],sys.argv[1:])", *command,
     ]
     if dependencies is not None:
         mode = 'rw' if install else 'ro'
         index = docker_command.index(IMAGE)
-        docker_command[index:index] = ['-v', f'{Path(dependencies).resolve()}:/deps:{mode}']
+        docker_command[index:index] = ['-v', f'{dependencies if str(dependencies).startswith("mini-devin-deps-") else Path(dependencies).resolve()}:/deps:{mode}']
     try:
         return capture_output(
             docker_command, capture_output=True, text=True, timeout=TIMEOUT,
@@ -72,7 +73,7 @@ def run_in_docker(project_dir, entry_path):
     if requirements.is_file() and validate_requirements(requirements.read_text(encoding='utf-8')):
         # A fresh host directory transfers wheels between separate containers.
         # Only the installer is granted networking; application execution is separate.
-        with tempfile.TemporaryDirectory(prefix='mini-devin-deps-') as dependencies:
+        with dependency_volume() as dependencies:
             installed = _run(
                 project_dir,
                 ['python', '-m', 'pip', 'install', '--no-cache-dir',
@@ -84,3 +85,34 @@ def run_in_docker(project_dir, entry_path):
                 return installed
             return _run(project_dir, ['python', f'./{entry}'], dependencies=dependencies)
     return _run(project_dir, ['python', f'./{entry}'])
+
+
+@contextmanager
+def dependency_volume():
+    name='mini-devin-deps-'+uuid.uuid4().hex
+    keeper=name+'-holder'
+    try:
+        created=capture_output(['docker','volume','create','--driver','local','--opt','type=tmpfs',
+                                '--opt','device=tmpfs','--opt',
+                                f'o=size=128m,uid={os.getuid() or 65534},gid={os.getgid() or 65534},mode=0700',name],
+                               timeout=10)
+        if created.returncode:
+            raise OSError('Bounded dependency volume could not be created')
+        # A local-driver tmpfs unmounts (and loses data) when its last container
+        # stops. Keep one bounded, networkless holder mounted across both stages.
+        held=capture_output(['docker','run','-d','--rm','--name',keeper,
+                             '--network','none','--read-only','--cap-drop','ALL',
+                             '--security-opt','no-new-privileges','--log-driver','none',
+                             '--memory','32m','--cpus','0.1','--pids-limit','8',
+                             '-v',name+':/deps',IMAGE,'python','-c','import time; time.sleep(180)'],timeout=10)
+        if held.returncode:
+            raise OSError('Dependency holder could not be started')
+        yield name
+    finally:
+        try:
+            capture_output(['docker','rm','-f',keeper],timeout=5)
+            removed=capture_output(['docker','volume','rm','-f',name],timeout=5)
+            if removed.returncode and 'no such volume' not in removed.stderr.lower():
+                logger.warning('Dependency volume cleanup failed for %s',name)
+        except (OSError,subprocess.TimeoutExpired):
+            logger.warning('Dependency volume cleanup unavailable for %s',name)

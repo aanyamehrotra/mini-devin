@@ -6,6 +6,8 @@ import secrets
 import socket
 import threading
 import time
+import tempfile
+from pathlib import Path
 import unittest
 from unittest.mock import patch
 import requests
@@ -18,7 +20,9 @@ class LiveHttpTests(unittest.TestCase):
         import uvicorn
         from app.main import create_app
         cls.token=secrets.token_urlsafe(32)
-        cls.env=patch.dict(os.environ,{'MINI_DEVIN_API_TOKEN':cls.token})
+        cls.corpus=tempfile.TemporaryDirectory()
+        (Path(cls.corpus.name)/'guide.md').write_text('Python output reference: print("MINI_DEVIN_DEPLOY_OK")')
+        cls.env=patch.dict(os.environ,{'MINI_DEVIN_API_TOKEN':cls.token,'RAG_ROOT':cls.corpus.name})
         cls.env.start()
         cls.sock=socket.socket()
         cls.sock.bind(('127.0.0.1',0))
@@ -39,6 +43,7 @@ class LiveHttpTests(unittest.TestCase):
         cls.thread.join(timeout=10)
         cls.sock.close()
         cls.env.stop()
+        cls.corpus.cleanup()
 
     def test_production_assets_health_and_unauthorized_request(self):
         home=requests.get(self.url+'/',timeout=5)
@@ -57,7 +62,7 @@ class LiveHttpTests(unittest.TestCase):
     def test_authenticated_real_provider_and_docker_stream(self):
         prompt='Create a Python program that prints exactly MINI_DEVIN_DEPLOY_OK on one line. Use the standard library only, no user input or external dependencies.'
         with requests.post(self.url+'/api/chat/stream',headers={'Authorization':'Bearer '+self.token},
-                           json={'prompt':prompt},stream=True,timeout=(5,120)) as response:
+                           json={'prompt':prompt,'use_context':True},stream=True,timeout=(5,120)) as response:
             self.assertEqual(response.status_code,200)
             events=[]; event_type=None
             for line in response.iter_lines(decode_unicode=True):
@@ -70,4 +75,8 @@ class LiveHttpTests(unittest.TestCase):
         result=events[-1][1]['result']
         self.assertEqual(result['execution']['stdout'].strip(),'MINI_DEVIN_DEPLOY_OK')
         self.assertTrue(result['review']['success'])
+        self.assertEqual(result['context']['status'],'ready')
+        saved=requests.get(self.url+'/api/runs/'+result['run_id'],headers={'Authorization':'Bearer '+self.token},timeout=5)
+        self.assertEqual(saved.status_code,200)
+        self.assertEqual(saved.json()['result']['execution']['stdout'].strip(),'MINI_DEVIN_DEPLOY_OK')
         self.assertEqual([data['stage'] for kind,data in events if kind=='stage'][:4],['plan','generate','execute','review'])

@@ -1,3 +1,7 @@
+import re
+import shutil
+import threading
+from functools import wraps
 import subprocess
 import uuid
 import time
@@ -12,6 +16,22 @@ from app.executor.docker_runner import (
 )
 
 
+_execution_slot=threading.BoundedSemaphore(1)
+
+
+def serialized_execution(function):
+    @wraps(function)
+    def guarded(*args,**kwargs):
+        if not _execution_slot.acquire(blocking=False):
+            return ExecutionResult(success=False,stdout="",stderr="Execution capacity is busy; retry after the current job finishes.",exit_code=-1,execution_time=0,error_type="ExecutionEnvironment")
+        try:
+            return function(*args,**kwargs)
+        finally:
+            _execution_slot.release()
+    return guarded
+
+
+@serialized_execution
 def execute_code(project: CodeResponse) -> ExecutionResult:
     start_time = time.perf_counter()
 
@@ -20,6 +40,14 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
 
     project_dir = workspace / str(uuid.uuid4())
     project_dir.mkdir(parents=True, exist_ok=True)
+    # Only prune our own UUID source directories; preserve unrelated user files.
+    candidates=sorted((p for p in workspace.iterdir() if p.is_dir() and not p.is_symlink()
+                       and re.fullmatch(r'[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}',p.name)),
+                      key=lambda p:p.stat().st_mtime,reverse=True)
+    for stale in candidates[20:]:
+        if stale != project_dir:
+            shutil.rmtree(stale)
+
 
     # Validate the entire batch before writing any generated content.
     try:

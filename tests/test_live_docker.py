@@ -83,3 +83,26 @@ else:
         self.assertFalse(result.success)
         self.assertEqual(result.error_type,'OutputLimitExceeded')
         self.assertLessEqual(len(result.stdout.encode()),256*1024)
+
+    def test_runtime_disk_is_bounded(self):
+        result=self.execute([('main.py','''import errno
+try:
+    with open('filled.bin','wb') as stream:
+        while True: stream.write(b'x'*1048576)
+except OSError as error:
+    if error.errno != errno.ENOSPC: raise
+    print('DISK_BOUNDED')
+''')])
+        self.assertTrue(result.success,result.stderr)
+        self.assertEqual(result.stdout.strip(),'DISK_BOUNDED')
+
+    def test_source_mount_is_read_only(self):
+        result=self.execute([('main.py','''try:
+    open('/source/tamper.py','w').write('bad')
+except OSError:
+    print('SOURCE_READ_ONLY')
+else:
+    raise RuntimeError('Source mount writable')
+''')])
+        self.assertTrue(result.success,result.stderr)
+        self.assertEqual(result.stdout.strip(),'SOURCE_READ_ONLY')
