@@ -8,7 +8,7 @@ from pathlib import Path
 import re
 
 EXTENSIONS = {'.py', '.md', '.rst', '.txt', '.js', '.jsx', '.ts', '.tsx'}
-EXCLUDED = {'node_modules', 'workspace', 'venv', 'dist', 'build', 'outputs', '__pycache__'}
+EXCLUDED = {'data', 'node_modules', 'workspace', 'venv', 'dist', 'build', 'outputs', '__pycache__'}
 MAX_FILE_BYTES = 256 * 1024
 MAX_TOTAL_BYTES = 4 * 1024 * 1024
 MAX_FILES = 200

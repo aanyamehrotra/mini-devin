@@ -10,7 +10,7 @@ class BearerGuard:
 
     async def __call__(self, scope, receive, send):
         path = scope.get('path','')
-        protected = path.startswith('/api/') or path in {'/chat','/chat/stream','/context/search'}
+        protected = path.startswith('/api/') or path == '/runs' or path.startswith('/runs/') or path in {'/chat','/chat/stream','/context/search'}
         token = os.getenv('MINI_DEVIN_API_TOKEN','')
         if scope['type'] == 'http' and protected and token:
             header = dict(scope.get('headers',[])).get(b'authorization',b'')

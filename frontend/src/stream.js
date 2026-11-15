@@ -54,3 +54,11 @@ export async function runTask(prompt, onEvent, signal, useContext = false, acces
   }
   return readEvents(response.body, onEvent, signal);
 }
+
+export async function savedRuns(accessToken = '', identifier = '') {
+  const response=await fetch('/api/runs'+(identifier ? '/'+encodeURIComponent(identifier) : ''),{
+    headers:accessToken ? {Authorization:`Bearer ${accessToken}`} : {},
+  });
+  if (!response.ok) throw new Error(response.status===401 ? 'Enter the workspace access token to view saved runs.' : 'Saved runs could not be loaded.');
+  return response.json();
+}

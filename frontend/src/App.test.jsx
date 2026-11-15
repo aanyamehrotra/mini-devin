@@ -3,8 +3,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from './App.jsx';
-import { runTask } from './stream.js';
-vi.mock('./stream.js',()=>({runTask:vi.fn()}));
+import { runTask, savedRuns } from './stream.js';
+vi.mock('./stream.js',()=>({runTask:vi.fn(),savedRuns:vi.fn()}));
 
 const code = { files: [{path:'main.py',content:'print("hello")'}, {path:'helper.py',content:'answer = 42'}] };
 const execution = {stdout:'hello output',stderr:'',exit_code:0,execution_time:.1};
@@ -97,4 +97,14 @@ it('passes an optional workspace token from memory',async()=>{
   await user.click(screen.getByRole('button',{name:/Build project/}));
   expect(runTask.mock.calls[0][4]).toBe('workspace-fixture');
   expect(screen.getByLabelText('Workspace access token (if configured)').type).toBe('password');
+});
+
+it('loads an archived run and renders its result',async()=>{
+  savedRuns.mockResolvedValueOnce({runs:[{id:'saved-id',goal:'Archived project',success:true,created_at:'2026-11-16T00:00:00Z'}]})
+    .mockResolvedValueOnce({prompt:'archived prompt',result:{...result,run_id:'saved-id'}});
+  const user=userEvent.setup();render(<App/>);
+  await user.click(screen.getByRole('button',{name:'Load saved runs'}));
+  await user.click(await screen.findByRole('button',{name:/Archived project/}));
+  expect(await screen.findByText('hello output')).toBeTruthy();
+  expect(screen.getByLabelText('Your task').value).toBe('archived prompt');
 });

@@ -1,4 +1,6 @@
 import json
+import sqlite3
+from app.storage.runs import save_run
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.encoders import jsonable_encoder
@@ -13,7 +15,8 @@ router = APIRouter()
 @router.post("/chat")
 def chat(request: ChatRequest):
     try:
-        return run_agent(request.prompt, use_context=True) if request.use_context else run_agent(request.prompt)
+        result=run_agent(request.prompt, use_context=True) if request.use_context else run_agent(request.prompt)
+        return archive_result(request.prompt,result)
     except AgentResponseError as error:
         raise HTTPException(
             status_code=502,
@@ -34,6 +37,8 @@ async def chat_stream(body: ChatRequest, request: Request):
         yield encode('started', {'status': 'running'})
         try:
             async for item in stream_agent(body.prompt, cancelled=request.is_disconnected, use_context=body.use_context):
+                if item['event']=='complete':
+                    item['data']['result']=archive_result(body.prompt,item['data']['result'])
                 yield encode(item['event'], item['data'])
         except AgentResponseError as error:
             yield encode('error', {'error': error.kind, 'stage': error.stage})
@@ -44,3 +49,12 @@ async def chat_stream(body: ChatRequest, request: Request):
     return StreamingResponse(events(), media_type='text/event-stream', headers={
         'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no',
     })
+
+
+def archive_result(prompt,result):
+    result=jsonable_encoder(result)
+    try:
+        result['run_id']=save_run(prompt,result)
+    except (OSError,sqlite3.Error,ValueError):
+        result['history_saved']=False
+    return result

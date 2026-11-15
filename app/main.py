@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from app.routes.chat import router as chat_router
 from app.routes.context import router as context_router
+from app.routes.runs import router as runs_router
 from app.services.access import BearerGuard
 from app.services.readiness import readiness
 
@@ -30,6 +31,8 @@ def create_app(frontend_dir=None):
         return JSONResponse(result, status_code=200 if result['ready'] else 503,
                             headers={'Cache-Control':'no-store'})
 
+    application.include_router(runs_router)
+    application.include_router(runs_router,prefix='/api')
     application.include_router(chat_router)
     application.include_router(context_router)
     application.include_router(chat_router, prefix='/api')

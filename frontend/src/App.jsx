@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { runTask } from './stream.js';
+import { runTask, savedRuns } from './stream.js';
 
 const steps = [['plan', 'Plan', 'Understand the request'], ['generate', 'Build', 'Write and refine code'],
   ['execute', 'Run', 'Execute the project'], ['review', 'Review', 'Check the result']];
@@ -19,6 +19,7 @@ function Result({ result }) {
   const files = (attempt?.code || result.code)?.files || [];
   const file = files[fileIndex] || files[0];
   return <section className="result" aria-label="Task results">
+    {result.history_saved === false && <p role="alert">This result could not be saved. Keep this page open or copy the generated files.</p>}
     <div className="section-heading"><div><span className="eyebrow">YOUR PROJECT</span><h2>{result.plan?.goal || 'Generated project'}</h2></div>
       <span className={`badge ${result.attempts.at(-1)?.success ? 'success' : 'failed'}`}>
         {result.attempts.at(-1)?.success ? 'Completed' : 'Needs attention'}</span></div>
@@ -40,6 +41,7 @@ function Result({ result }) {
 
 export default function App() {
   const [prompt, setPrompt] = useState('');
+  const [history, setHistory] = useState([]);
   const [useContext, setUseContext] = useState(false);
   const [accessToken, setAccessToken] = useState('');
   const [status, setStatus] = useState('idle');
@@ -70,6 +72,16 @@ export default function App() {
     } finally { if (controller.current === request) controller.current = null; }
   }
 
+  async function loadHistory(identifier='') {
+    try {
+      const data=await savedRuns(accessToken,identifier);
+      if (identifier) {
+        setResult(data.result);setPrompt(data.prompt);setMessage('');
+        setStatus(data.result.attempts.at(-1)?.success ? 'complete' : 'failed');
+        setEvents(steps.map(([stage])=>({stage,attempt:data.result.attempts.length})));
+      } else setHistory(data.runs);
+    } catch(error) {setMessage(error.message);}
+  }
   const last = events.at(-1);
   return <div className="shell"><aside>
     <a className="brand" href="/" aria-label="Mini-Devin home"><span className="brand-icon">m<span>·</span></span>mini-devin</a>
@@ -89,6 +101,7 @@ export default function App() {
       <details className="access-settings"><summary>Workspace access</summary><label htmlFor="access-token">Workspace access token (if configured)</label><input id="access-token" type="password" value={accessToken} disabled={busy} autoComplete="off" onChange={e => setAccessToken(e.target.value)}/><p>This is a workspace password, not your model API key. It stays in memory until you close or reload this page.</p></details>
       <label className="context-toggle"><input type="checkbox" checked={useContext} disabled={busy} onChange={e => setUseContext(e.target.checked)}/><span>Use project references<small>Excerpts from the configured code/docs are sent to your model provider.</small></span></label>
       {status === 'idle' && <div className="examples"><span>Try a starting point</span>{examples.map(example => <button type="button" key={example} onClick={() => setPrompt(example)}>{example} <span>↗</span></button>)}</div>}
+      <section className="saved-runs"><button type="button" disabled={busy} onClick={()=>loadHistory()}>Load saved runs</button><span>Latest 100 results retained locally.</span>{history.length>0 && <ul>{history.map(run=><li key={run.id}><button type="button" disabled={busy} onClick={()=>loadHistory(run.id)}>{run.success ? '✓' : '!'} {run.goal}<small>{new Date(run.created_at).toLocaleString()}</small></button></li>)}</ul>}</section>
       <section className="progress" aria-label="Agent progress"><div className="section-heading"><h2>The workflow</h2>
         <span className="workflow-state" role="status">{busy ? `Working${last ? ` · attempt ${last.attempt || 1}` : ''}` :
           ({idle:'Ready when you are', complete:'Finished', failed:'Finished with issues', error:'Request failed', stopped:'Updates stopped'})[status]}</span></div>
@@ -98,9 +111,9 @@ export default function App() {
         })}</ol>
       </section>
       {message && <div className={`notice ${status === 'error' ? 'notice-error' : ''}`} role="alert">{message}</div>}
-      {result && <Result result={result}/>}
+      {result && <Result key={result.run_id || result.plan?.goal} result={result}/>}
       {!result && !busy && !message && <div className="empty"><span className="empty-icon">⌁</span><h3>A little context goes a long way.</h3><p>Include sample inputs, expected output, and any packages you want to use.<br/>Your generated files and execution results will appear here.</p></div>}
-      <div className="page-foot">Generated code should be reviewed before use. <span>Progress is saved for this session only.</span></div>
+      <div className="page-foot">Generated code should be reviewed before use. <span>Completed runs are archived locally when storage is available.</span></div>
     </div>
   </main></div>;
 }
