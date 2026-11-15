@@ -77,3 +77,9 @@ else:
         self.assertFalse(result.success)
         self.assertEqual(result.error_type,'Timeout')
         self.assertFalse(containers()-before,'A timed-out container survived cleanup')
+
+    def test_output_flood_is_bounded(self):
+        result=self.execute([('main.py','import os\nwhile True:\n    os.write(1,b"x"*65536)')])
+        self.assertFalse(result.success)
+        self.assertEqual(result.error_type,'OutputLimitExceeded')
+        self.assertLessEqual(len(result.stdout.encode()),256*1024)

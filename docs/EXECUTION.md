@@ -76,3 +76,13 @@ MINI_DEVIN_LIVE_DOCKER=1 .venv/bin/python -m unittest tests.test_live_docker -v
 The default suite skips them. Tests do not call a model provider. They do not prove
 all resource/escape protections, bounded output handling, or public deployment
 safety. Those remain separate gates. The live run took about 47 seconds.
+
+## Bounded output — November 15
+
+The Docker client and cleanup subprocess now use a selector-based reader retaining
+at most 256 KiB of combined raw stdout/stderr. On overflow the client is killed,
+OutputLimitExceeded is returned, and the existing forced container cleanup runs.
+UTF-8 decoding replaces invalid sequences. Timeout handling kills/reaps the client
+before propagating its timeout. Diagnostic text is separate from the raw-byte budget.
+This bounds retained output, not workload disk usage or concurrent job count.
+Real host-process flood/timeout tests and a real Docker output-flood test passed.

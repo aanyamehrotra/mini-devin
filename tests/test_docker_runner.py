@@ -15,7 +15,7 @@ class DockerTests(unittest.TestCase):
         self.main = self.root / 'main.py'
         self.main.write_text('print("hello")')
 
-    @patch('app.executor.docker_runner.subprocess.run')
+    @patch('app.executor.docker_runner.capture_output')
     def test_runtime_is_bounded_and_network_disabled(self, run):
         run.return_value = subprocess.CompletedProcess([], 0, 'hello', '')
         run_in_docker(self.root, 'main.py')
@@ -27,14 +27,14 @@ class DockerTests(unittest.TestCase):
         self.assertEqual(run.call_args_list[0].kwargs['stdin'], subprocess.DEVNULL)
         self.assertEqual(run.call_args_list[1].args[0], ['docker', 'rm', '-f', command[command.index('--name')+1]])
 
-    @patch('app.executor.docker_runner.subprocess.run')
+    @patch('app.executor.docker_runner.capture_output')
     def test_timeout_cleans_container_and_preserves_error(self, run):
         run.side_effect = [subprocess.TimeoutExpired('docker', 30), subprocess.CompletedProcess([], 0, '', '')]
         with self.assertRaises(subprocess.TimeoutExpired):
             run_in_docker(self.root, 'main.py')
         self.assertEqual(run.call_args_list[1].args[0][:3], ['docker', 'rm', '-f'])
 
-    @patch('app.executor.docker_runner.subprocess.run')
+    @patch('app.executor.docker_runner.capture_output')
     def test_cleanup_failure_does_not_hide_result(self, run):
         result = subprocess.CompletedProcess([], 1, '', 'program error')
         run.side_effect = [result, subprocess.TimeoutExpired('docker', 5)]
@@ -66,7 +66,7 @@ class DockerTests(unittest.TestCase):
         self.assertIs(run_in_docker(self.root, 'main.py'), failed)
         run.assert_called_once()
 
-    @patch('app.executor.docker_runner.subprocess.run')
+    @patch('app.executor.docker_runner.capture_output')
     def test_dependency_mount_read_only_at_runtime(self, run):
         from app.executor.docker_runner import _run
         run.return_value = subprocess.CompletedProcess([], 0, '', '')
@@ -74,7 +74,7 @@ class DockerTests(unittest.TestCase):
         command = run.call_args_list[0].args[0]
         self.assertIn(f'{self.root.resolve()}:/deps:ro', command)
 
-    @patch('app.executor.docker_runner.subprocess.run')
+    @patch('app.executor.docker_runner.capture_output')
     def test_validation_uses_network_none(self, run):
         run.return_value = subprocess.CompletedProcess([], 0, '', '')
         validate_in_docker(self.root, [self.main])
@@ -82,7 +82,7 @@ class DockerTests(unittest.TestCase):
         self.assertEqual(command[-4:], ['python', '-m', 'py_compile', 'main.py'])
         self.assertEqual(command[command.index('--network')+1], 'none')
 
-    @patch('app.executor.docker_runner.subprocess.run')
+    @patch('app.executor.docker_runner.capture_output')
     def test_entry_escape_rejected_before_launch(self, run):
         with self.assertRaises(ValueError):
             run_in_docker(self.root, '../outside.py')

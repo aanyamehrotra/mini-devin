@@ -6,6 +6,7 @@ from pathlib import Path
 import subprocess
 import uuid
 import tempfile
+from app.executor.capture import capture_output
 
 from app.executor.requirements import validate_requirements
 
@@ -33,14 +34,14 @@ def _run(project_dir, command, *, network='none', dependencies=None, install=Fal
         index = docker_command.index(IMAGE)
         docker_command[index:index] = ['-v', f'{Path(dependencies).resolve()}:/deps:{mode}']
     try:
-        return subprocess.run(
+        return capture_output(
             docker_command, capture_output=True, text=True, timeout=TIMEOUT,
             stdin=subprocess.DEVNULL,
         )
     finally:
         # Killing the local Docker client alone does not guarantee container exit.
         try:
-            cleanup = subprocess.run(
+            cleanup = capture_output(
                 ['docker', 'rm', '-f', name], capture_output=True, text=True, timeout=5,
             )
             if cleanup.returncode and 'No such container' not in cleanup.stderr:

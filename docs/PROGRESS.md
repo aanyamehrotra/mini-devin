@@ -402,3 +402,25 @@ run history; live product GitHub export; broader provider/quality and browser E2
 coverage; remaining execution output/disk/concurrency protections. A shared token
 and these local checks do not establish public multi-tenant sandbox readiness.
 November 16 remains the final target with evidence-based gap reporting.
+
+## Bounded execution output — November 15, 2026 (IST)
+
+Started from upstream 85b739a in a fresh checkout. Replaced unlimited subprocess
+capture with selector-based reads capped at 256 KiB combined raw output. Overflow
+kills/reaps the Docker client, returns OutputLimitExceeded, and enters existing
+container cleanup. Added safe invalid-UTF8 handling and host-process regressions
+for both streams, exit status, flood termination and timeout reaping.
+
+Validation:
+- 115 offline backend tests passed; 10 opt-in live tests skipped by default.
+- Four new host-process tests use actual subprocesses, not mocked pipe behavior.
+- Started Docker via its supported CLI after the first engine check found no socket.
+  The new real Docker output-flood test passed in about 1.6 seconds.
+- Existing Docker/live HTTP tests were not repeated; frontend unchanged and its
+  prior 20 tests were not rerun. No cloud resources or product GitHub writes made.
+- Python compilation and whitespace checks passed. Existing LangSmith warning remains.
+
+Retained-output size is now bounded; disk/workspace growth and global concurrency
+remain separate gaps. Durable run history, live GitHub export and actual AWS hosting
+remain outstanding. AWS account/target/budget is still unapproved. November 16
+remains the final target, with an evidence-backed gap report required. No emails sent.

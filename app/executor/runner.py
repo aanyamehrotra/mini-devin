@@ -208,6 +208,9 @@ def execute_code(project: CodeResponse) -> ExecutionResult:
 
 
 def classify_error(stderr: str) -> str | None:
+    if "OutputLimitExceeded" in stderr:
+        return "OutputLimitExceeded"
+
     if "SyntaxError" in stderr:
         return "SyntaxError"
 
