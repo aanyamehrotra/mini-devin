@@ -1,0 +1,1 @@
+print("MINI_DEVIN_EXPORT_OK")
