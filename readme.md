@@ -1,166 +1,60 @@
 # Mini-Devin
 
-Mini-Devin is an autonomous AI coding agent that takes a programming request in natural language, plans the solution, generates code, executes it, reviews execution results, and automatically rewrites the code when errors occur.
+A local autonomous Python coding workspace: describe a task, follow planning/code/
+execution/review stages, inspect generated files and retry attempts, and reload
+completed runs later.
 
-The project is inspired by autonomous software engineering systems such as Devin and OpenHands, but is being built from scratch to understand the architecture and engineering behind these systems.
+## Run locally
+
+Requires Python 3.12+, a supported Node version (see frontend/package.json), Docker,
+and a configured Groq, Gemini or Ollama provider.
+
+```sh
+./scripts/setup-local.sh
+# Configure the ignored .env using .env.example; never commit keys.
+# Start Docker Desktop / Docker Engine.
+./scripts/start-local.sh
+```
+
+Open **http://127.0.0.1:8000**. The built React UI and FastAPI API share one origin.
+If a workspace access token is configured, enter that separate token in Workspace
+access. Provider keys stay in the backend; do not put them in the browser.
 
 ## Features
 
-Current capabilities include:
+- LangGraph planner/coder/executor/reviewer loop with bounded rewrites.
+- Gemini, Groq and Ollama adapters; configurable Groq model.
+- Multi-file generation, private UUID workspaces and real Docker execution.
+- Bounded output/runtime/dependency storage, read-only sources and execution serialization.
+- React stage streaming, file/output/error previews and per-attempt inspection.
+- Persistent local completed-run history with bounded retention.
+- Opt-in local lexical retrieval with supplied source/line attribution.
+- Preview-first GitHub CLI export to a fresh project folder/branch and optional draft PR.
+- Shared-token API protection, health/readiness checks and private-host deployment templates.
 
-* Natural language task planning
-* AI-based code generation
-* Multi-file project generation
-* Automatic code execution
-* Execution in isolated workspaces
-* Capture of stdout, stderr, and exit codes
-* AI-powered code review
-* Automatic code rewriting
-* Retry loop for failed executions
-* FastAPI REST API
+## Guides and verification
 
-## Architecture
+- [Provider configuration](docs/PROVIDERS.md)
+- [Frontend](docs/FRONTEND.md) and [streaming API](docs/STREAMING.md)
+- [Saved history](docs/HISTORY.md)
+- [Retrieval and context data sharing](docs/RETRIEVAL.md)
+- [Execution limits](docs/EXECUTION.md)
+- [GitHub export](docs/GITHUB_EXPORT.md)
+- [Deployment preparation](docs/DEPLOYMENT.md)
+- [Final acceptance and known limits](docs/FINAL_ACCEPTANCE.md)
+- [Progress log](docs/PROGRESS.md)
 
-```
-User Prompt
-      │
-      ▼
-Planner Agent
-      │
-      ▼
-Coder Agent
-      │
-      ▼
-Generated Project
-      │
-      ▼
-Execution Engine
-      │
-      ▼
-Execution Result
-      │
-      ▼
-Reviewer Agent
-      │
-      ▼
-Rewrite Agent
-      │
-      ▼
-Retry (until success or max retries)
+```sh
+.venv/bin/python -m unittest discover -s tests -v
+npm test --prefix frontend
+npm run build --prefix frontend
 ```
 
-## Tech Stack
+Live tests are opt-in and can consume model quota. The acceptance report separates
+mocked, actual subprocess/container, HTTP and GitHub verification.
 
-* Python
-* FastAPI
-* Gemini API
-* Pydantic
-* Subprocess
-* UUID-based workspace isolation
-
-## Project Structure
-
-```
-MINI-DEVIN/
-│
-├── app/
-│   ├── agents/
-│   │   ├── planner.py
-│   │   ├── coder.py
-│   │   ├── reviewer.py
-│   │   └── manager.py
-│   │
-│   ├── executor/
-│   │   └── runner.py
-│   │
-│   ├── routes/
-│   │   └── chat.py
-│   │
-│   ├── services/
-│   │   └── llm/
-│   │
-│   ├── models/
-│   │   └── schemas.py
-│   │
-│   └── main.py
-│
-├── workspace/
-├── requirements.txt
-└── README.md
-```
-
-## Current Workflow
-
-1. The user submits a programming task.
-2. The Planner Agent creates a structured implementation plan.
-3. The Coder Agent generates the project files.
-4. The Execution Engine creates an isolated workspace and runs the generated project.
-5. Execution output and errors are collected.
-6. The Reviewer Agent analyzes the execution results.
-7. The Rewrite Agent improves the implementation when necessary.
-8. The system retries until the project succeeds or reaches the maximum retry limit.
-
-## Current Status
-
-Implemented:
-
-* FastAPI backend
-* Planner Agent
-* Coder Agent
-* Reviewer Agent
-* Rewrite Agent
-* Manager orchestration
-* Multi-file code generation
-* Workspace isolation
-* Execution engine
-* Automatic retry mechanism
-* Timeout handling
-* Structured execution reports
-
-In Progress:
-
-* Improved handling of interactive programs
-* Better execution feedback for autonomous debugging
-
-## Roadmap
-
-Short term
-
-* Virtual environment creation per workspace
-* Automatic dependency installation
-* Better runtime error classification
-* Docker-based sandbox execution
-
-Medium term
-
-* Retrieval-Augmented Generation (RAG)
-* LangGraph-based orchestration
-* Streaming execution updates
-* React frontend
-
-Long term
-
-* GitHub integration
-* Pull request generation
-* Repository-aware coding
-* Automated test generation
-* Cloud deployment
-
-## Motivation
-
-The goal of this project is to understand how modern autonomous coding agents work internally rather than simply using existing frameworks.
-
-Each component is implemented separately to explore planning, code generation, execution, debugging, and iterative improvement as independent agents working together in a feedback loop.
-
-
-
-## Provider configuration and delivery plan
-
-See [provider setup and tests](docs/PROVIDERS.md) for Gemini, Groq and local
-Ollama configuration. Track the current work in the [roadmap](docs/ROADMAP.md)
-and [daily progress log](docs/PROGRESS.md).
-
-## React workspace
-
-See [frontend setup and verification](docs/FRONTEND.md) to run the streaming
-React interface, inspect attempts, and preview generated project files.
+AWS hosting is explicitly pending at the user's request. This is a private/local
+single-workspace application, not a public multi-tenant code-execution service.
+Gemini/Ollama alternatives have offline coverage but were not live-verified in the
+final Groq-based integration run. Generated programs still require review; passing
+an agent review is not a universal correctness guarantee.

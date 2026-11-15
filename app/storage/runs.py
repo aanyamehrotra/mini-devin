@@ -32,7 +32,8 @@ def save_run(prompt,result):
     identifier=uuid.uuid4().hex
     created=datetime.now(timezone.utc).isoformat()
     success=bool(result.get('attempts') and result['attempts'][-1]['success'])
-    goal=result.get('plan',{}).get('goal','Generated project')
+    goal=result.get('plan',{}).get('goal','Generated project')[:200]
+    prompt=prompt[:20000]
     with _connect() as connection:
         connection.execute('INSERT INTO runs VALUES (?,?,?,?,?,?)',(identifier,created,prompt,int(success),goal,payload))
         connection.execute('DELETE FROM runs WHERE id NOT IN (SELECT id FROM runs ORDER BY created_at DESC,id DESC LIMIT ?)',(MAX_RUNS,))
@@ -41,7 +42,7 @@ def save_run(prompt,result):
 
 def list_runs():
     with _connect() as connection:
-        rows=connection.execute('SELECT id,created_at,success,goal FROM runs ORDER BY created_at DESC,id DESC LIMIT 50').fetchall()
+        rows=connection.execute('SELECT id,created_at,success,goal FROM runs ORDER BY created_at DESC,id DESC LIMIT ?',(MAX_RUNS,)).fetchall()
     return [{'id':r[0],'created_at':r[1],'success':bool(r[2]),'goal':r[3]} for r in rows]
 
 

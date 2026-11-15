@@ -74,3 +74,10 @@ no live generated-project export was performed. Browser export/OAuth, persistent
 run history, actual AWS deployment and live model/Docker end-to-end gates remain.
 The next priority is deployable configuration and readiness checks, followed by
 final verification and a precise completion/gap report.
+
+## Final local handoff — November 16
+
+See FINAL_ACCEPTANCE.md. Local history, bounded execution/storage, full selected-
+provider HTTP flow and real GitHub export are delivered and verified. AWS hosting
+was explicitly kept pending by the user. Alternative live providers, Linux/public
+hosting verification and multi-tenant hardening are not claimed complete.

@@ -118,3 +118,13 @@ MINI_DEVIN_LIVE_HTTP=1 .venv/bin/python -m unittest tests.test_live_http -v
 
 These tests call the configured real model and may consume provider quota. They
 are skipped by the default offline suite. No emails are sent.
+
+## Final local handoff
+
+Completed runs now persist in the private local SQLite archive; see HISTORY.md.
+Runtime files and dependencies use bounded tmpfs, source is read-only, and the API
+serializes Docker execution per process. Dependency transfer no longer relies on
+a writable host temp directory; the current Linux template still leaves PrivateTmp
+off to preserve predictable host bind paths. The original source-path and single-
+worker requirements remain. Setup/start scripts are provided at scripts/.
+AWS hosting is pending by explicit user instruction; see FINAL_ACCEPTANCE.md.

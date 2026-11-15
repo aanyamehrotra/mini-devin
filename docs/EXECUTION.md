@@ -8,13 +8,13 @@ Each validation/execution container has a UUID name, a 30-second client timeout,
 256 MiB memory/swap limit, half a CPU and 64-process limit. Containers drop all
 capabilities, use no-new-privileges, an init process and a read-only root filesystem.
 The container user matches the host UID/GID; root hosts fall back to UID/GID 65534.
-The mounted workspace must therefore be readable and writable by that identity.
+The mounted source must be readable by that identity; runtime writes use bounded scratch storage.
 A 128 MiB temporary filesystem provides scratch space and Python bytecode storage.
 
 Syntax validation and application execution run with network disabled. Projects
 with a nonempty root requirements.txt first use a separate network-enabled pip
-container. A temporary host directory transfers installed dependencies into the
-runtime as a read-only /deps mount, then is removed after execution or failure.
+container. A bounded tmpfs-backed Docker volume transfers dependencies into a read-only runtime mount,
+with its mount lifetime held across stages (see the final policy below).
 The generated application is not launched if installation fails. Both stages use
 the same Python image and each has a separate 30-second timeout.
 
@@ -24,12 +24,12 @@ paths, direct URLs, editable installs, nested requirement files, pip options and
 environment markers are rejected before installation. Comments are supported;
 comment-only files skip installation. Invalid files return InvalidRequirements.
 This restricted syntax does not establish that a package is trustworthy. Do not
-provide the installer credentials. The temporary directory currently has no disk quota.
+provide the installer credentials. The current dependency volume has a 128 MiB quota.
 
 Entry paths are checked to remain in the project. Runtime paths are passed directly as
 arguments,
 so spaces and shell metacharacters do not become shell instructions. The generated
-workspace remains writable to support project output; the host Docker socket and
+source is now read-only and runtime files use /tmp/project; the host Docker socket and
 host credentials are not mounted.
 
 The runner attempts `docker rm -f` on its unique container name after every run,
@@ -46,9 +46,8 @@ checks before deployment: successful single/multi-file projects, dependency impo
 syntax/runtime errors, timeouts with no surviving containers, denied network access,
 and workspace permissions on the target OS.
 
-Still outstanding: bounded stdout/stderr capture, dependency disk quotas,
-image digest pinning, broader environment classification, workspace retention and
-live container tests. This is an incremental Docker hardening change, not a complete
+Current remaining hardening includes image digest pinning, broader environment classification
+and multi-process scheduling. The final policy below supersedes the earlier storage design. This is an incremental Docker hardening change, not a complete
 security boundary for public arbitrary-code execution.
 
 Docker flag behavior: [official docker run reference](https://docs.docker.com/reference/cli/docker/container/run/).
@@ -86,3 +85,34 @@ UTF-8 decoding replaces invalid sequences. Timeout handling kills/reaps the clie
 before propagating its timeout. Diagnostic text is separate from the raw-byte budget.
 This bounds retained output, not workload disk usage or concurrent job count.
 Real host-process flood/timeout tests and a real Docker output-flood test passed.
+
+## Final storage/concurrency policy — November 16
+
+Current execution mounts generated source read-only at /source, copies it into
+/tmp/project inside the 128 MiB runtime tmpfs and runs there. Generated runtime
+writes no longer use a writable host workspace. Stdout/stderr remain capped at
+256 KiB combined raw bytes. Docker daemon log storage is disabled for these jobs.
+
+Dependency installation uses a separate 128 MiB tmpfs-backed Docker volume. A
+small, networkless, read-only holder container keeps that mount alive across the
+installer and runtime; otherwise local-driver tmpfs data disappears at unmount.
+The runtime sees dependencies read-only. Both holder and volume are removed on
+context exit. A real dependency install/import validated this lifecycle after an
+initial live test exposed the missing-holder issue.
+
+The backend serializes actual Docker execution with a nonblocking process-local
+semaphore. Busy executions return an environment failure; no hidden queue is added.
+Use the supplied single-worker deployment. Multiple server processes/instances
+have independent limits; this is not a distributed scheduler.
+
+Generated projects are limited to 100 files, 1 MiB combined UTF-8 content and
+262,144 characters per file. Requests allow up to 20,000 prompt characters. Source
+workspace retention prunes only our UUID directories beyond the latest 20 and
+preserves unrelated directories. The history database has separate bounded retention.
+These are local single-workspace controls, not a complete adversarial multi-tenant
+security certification. Model calls already in progress still cannot be force-cancelled.
+
+Ten real Docker checks passed in the final run: dependencies, nested imports,
+library validation, syntax/runtime errors, network denial, source immutability,
+bounded disk, bounded output and timeout cleanup. A real authenticated HTTP/model/
+retrieval/history workflow also passed. See FINAL_ACCEPTANCE.md for exact scope.

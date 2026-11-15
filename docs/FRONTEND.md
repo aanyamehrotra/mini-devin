@@ -40,8 +40,8 @@ CORS permission is added. Exact dependencies and the npm lockfile are committed.
   code/errors, or choose a file tab to view its source.
 - Stop updates aborts the browser fetch. Work already running may still finish;
   see the backend [cancellation limits](STREAMING.md).
-- Results/history live in memory and disappear on reload; there is no durable
-  session store, downloaded project bundle, authentication or provider settings UI.
+- Completed runs are saved locally and can be reloaded with Load saved runs.
+  There is no browser project ZIP exporter, OAuth account login or provider-key settings UI.
 - This is stage streaming, not model token or live stdout streaming.
 - Typography optionally loads Google Fonts; local fallback fonts work without it.
 
@@ -64,8 +64,8 @@ or Docker. Existing 61 backend tests were not rerun for this frontend-only chang
 `npm run build` writes ignored `dist/` assets. A separate static-host setup must proxy `/api/*` to a compatible FastAPI route
 with streaming buffering disabled, or use the unified backend service described below. Vite's development proxy does NOT apply to a static
 production build or `vite preview`. No site was deployed by this milestone.
-Authentication, deployed browser end-to-end checks and durable history remain
-future work. Do not expose the arbitrary-code backend publicly without its
+Shared-token access and durable local history are implemented. Public multi-user identity
+and cloud-hosted browser checks remain outside the verified local scope. Do not expose the arbitrary-code backend publicly without its
 remaining execution and access-control work.
 
 ## Optional references
@@ -83,3 +83,5 @@ A separate static host/proxy is optional, not required for local startup. Worksp
 access accepts a separate in-memory token when the backend requires one; no token
 is baked into the build. See [deployment setup](DEPLOYMENT.md) for authentication,
 preflight and private-host templates. Current frontend suite: 20 passing tests.
+
+See [saved-run retention and privacy](HISTORY.md) for archive behavior. Current UI suite: 21 tests.

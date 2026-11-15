@@ -25,11 +25,11 @@ failure also stops retries. Structured provider errors still propagate to the
 existing safe HTTP 502 boundary.
 
 POST /chat keeps its plan/code/execution/review/attempts response fields. Each run
-starts with a fresh state and history. History is in memory for the current request:
-there is no durable checkpoint, resume API, background job or cross-request storage.
+starts with a fresh state and history. Graph state remains in-memory while a run executes. Completed API results are now
+archived to SQLite (see HISTORY.md); this is not live graph checkpoint/resume.
 The compiled graph now feeds an HTTP stage-streaming endpoint; see
 [streaming contract](STREAMING.md) for event types and cooperative disconnect
-limits. Frontend rendering and durable cancellation remain pending.
+limits. Frontend rendering is implemented; durable cancellation/resume remains outside the current scope.
 
 This integrates LangChain Core runnables, not a migration of Gemini/Groq/Ollama to
 LangChain chat models. Provider adapters continue to implement the existing BaseLLM.

@@ -424,3 +424,26 @@ Retained-output size is now bounded; disk/workspace growth and global concurrenc
 remain separate gaps. Durable run history, live GitHub export and actual AWS hosting
 remain outstanding. AWS account/target/budget is still unapproved. November 16
 remains the final target, with an evidence-backed gap report required. No emails sent.
+
+## Final local-readiness pass — November 16, 2026
+
+The user explicitly kept AWS hosting pending and requested local completion.
+Added persistent completed-run SQLite storage and API/UI reload, bounded retention
+and private file permissions. Added input/project limits and serialized Docker
+execution. Runtime source is read-only, working files use bounded tmpfs, dependencies
+use a bounded tmpfs volume held mounted across stages, and source workspaces retain
+only the latest 20 UUID directories.
+
+Verification: 128 offline backend tests and 21 frontend tests passed; production
+build, dependency, Python/shell syntax and whitespace checks passed. All 10 real
+Docker cases and both real HTTP/model/retrieval/history tests passed. Live failures
+were repaired before acceptance: an import typo and tmpfs data loss at unmount.
+
+Real GitHub export also passed using existing Git authentication only in memory:
+fixture commit 02098225d5992688f2fd2b86d7627b957c54de4d and draft PR #1. No export
+credential was persisted, no base branch was changed by the export and no merge
+performed. It is a disposable verification fixture, not code intended for merging.
+
+History/API/UI commit db6d1a4; execution/storage controls commit 2418e92. Final setup
+scripts/docs and acceptance report follow. See FINAL_ACCEPTANCE.md for exact scope
+and remaining limits. AWS hosting remains explicitly deferred. No emails sent.
