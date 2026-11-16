@@ -29,3 +29,12 @@ it('rejects duplicates and overlarge projects', () => {
     'limit'
   );
 });
+
+it('rejects file/directory conflicts before creating a ZIP', () => {
+  expect(() =>
+    projectZip([
+      { path: 'src', content: 'not a directory' },
+      { path: 'src/main.py', content: 'print(1)' },
+    ])
+  ).toThrow('path conflict');
+});

@@ -94,8 +94,8 @@ plan view, per-attempt diffs, copy and validated ZIP downloads. Live stage event
 include measured durations and the page shows elapsed waiting time. The UI supports
 390px mobile layouts, keyboard focus indicators, a skip link and reduced motion.
 Recordings are explicitly labelled; they never imply a fresh model invocation.
-The embedded 30-second visual walkthrough is assembled from captured app views;
-it is not a continuous live-generation recording. Private owner history is separate.
+The embedded studio walkthrough captures real browser interaction, including live
+generation and a manual Docker rerun; pauses are trimmed for readability. Private owner history is separate.
 
 ## Project studio
 

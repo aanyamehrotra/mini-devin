@@ -13,6 +13,12 @@ export function projectZip(files) {
       Object.hasOwn(entries, path)
     )
       throw new Error('This project contains an unsafe or duplicate file path.');
+    if (
+      Object.keys(entries).some(
+        (existing) => existing.startsWith(path + '/') || path.startsWith(existing + '/')
+      )
+    )
+      throw new Error('This project contains a file/directory path conflict.');
     const content = strToU8(file.content);
     bytes += content.length;
     if (bytes > 1024 * 1024 || Object.keys(entries).length >= 100)
