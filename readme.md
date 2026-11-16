@@ -8,10 +8,17 @@ completed runs later.
 
 **[Open Mini-Devin](https://mini-devin-13-55-65-113.sslip.io)**
 
-Hosted on AWS in Sydney (`ap-southeast-2`). Expand **Workspace access** and
-enter the private workspace token supplied by the project owner before building
-projects or loading saved runs. Provider keys remain on the backend. The access
-token is intentionally not published in this repository.
+Hosted on AWS in Sydney (`ap-southeast-2`). Visitors can run two real Python
+examples **without signing in or entering a token**. Demo access is limited to
+three runs per visitor/network per UTC day, twenty shared runs per UTC day,
+one active demo at a time, and a minute between runs. Limits survive service
+restarts; failed and disconnected attempts count too.
+
+For full access, **ask the project owner for a workspace access token**, then
+[open the private workspace](https://mini-devin-13-55-65-113.sslip.io/workspace).
+Custom prompts and saved history remain token protected. Public demo results
+are never added to private history. Provider keys and the workspace token are
+not published. See [public demo setup and limits](docs/PUBLIC_DEMO.md).
 
 Verified on November 16, 2026: trusted HTTPS, production UI/assets, Docker readiness,
 unauthorized-request rejection, a real Groq → planner/coder → Docker → reviewer

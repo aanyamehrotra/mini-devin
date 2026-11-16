@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from app.executor.capture import capture_output
 
 from app.executor.requirements import validate_requirements
+from app.services.demo_policy import public_demo
 
 logger = logging.getLogger(__name__)
 TIMEOUT = 30
@@ -71,6 +72,8 @@ def run_in_docker(project_dir, entry_path):
     entry = _relative_path(project_dir, entry_path)
     requirements = Path(project_dir) / 'requirements.txt'
     if requirements.is_file() and validate_requirements(requirements.read_text(encoding='utf-8')):
+        if public_demo.get():
+            raise ValueError('Public examples must use the Python standard library only')
         # A fresh host directory transfers wheels between separate containers.
         # Only the installer is granted networking; application execution is separate.
         with dependency_volume() as dependencies:

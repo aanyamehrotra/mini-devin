@@ -108,3 +108,20 @@ it('loads an archived run and renders its result',async()=>{
   expect(await screen.findByText('hello output')).toBeTruthy();
   expect(screen.getByLabelText('Your task').value).toBe('archived prompt');
 });
+
+it('public demo needs no token, shows limits on selection/run, and hides private history',async()=>{
+  vi.stubEnv('VITE_PUBLIC_DEMO','true');
+  try {
+    runTask.mockImplementation(async(prompt,onEvent)=>onEvent({type:'complete',data:{success:true,result:{...result,public_demo:true}}}));
+    const user=userEvent.setup();render(<App/>);
+    expect(screen.queryByText('Workspace access')).toBeNull();
+    expect(screen.queryByRole('button',{name:'Load saved runs'})).toBeNull();
+    await user.selectOptions(screen.getByLabelText('Choose an example'),'csv');
+    expect(screen.getByRole('alert').textContent).toContain('Demo access is limited');
+    await user.click(screen.getByRole('button',{name:/Run live demo/}));
+    expect(runTask.mock.calls[0][5]).toBe('csv');
+    expect(runTask.mock.calls[0][4]).toBe('');
+    expect(screen.getByRole('alert').textContent).toContain('twenty runs total per day');
+    expect(screen.getByText(/not added to the private workspace history/)).toBeTruthy();
+  } finally {vi.unstubAllEnvs();}
+});

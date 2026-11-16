@@ -3,6 +3,7 @@ from groq import Groq, RateLimitError
 
 from app.config import GROQ_API_KEY, GROQ_MODEL
 from app.services.llm.base import BaseLLM
+from app.services.demo_policy import public_demo
 
 
 class GroqLLM(BaseLLM):
@@ -12,7 +13,8 @@ class GroqLLM(BaseLLM):
 
     def generate(self, prompt: str) -> str:
 
-        max_retries = 3
+        demo = public_demo.get()
+        max_retries = 1 if demo else 3
 
         for attempt in range(max_retries):
             try:
@@ -25,6 +27,7 @@ class GroqLLM(BaseLLM):
                         }
                     ],
                     temperature=0.2,
+                    **({'max_tokens': 4096} if demo else {}),
                 )
 
                 return response.choices[0].message.content

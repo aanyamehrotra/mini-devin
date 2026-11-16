@@ -42,12 +42,16 @@ export async function readEvents(body, onEvent, signal) {
   }
 }
 
-export async function runTask(prompt, onEvent, signal, useContext = false, accessToken = '') {
-  const response = await fetch('/api/chat/stream', {
+export async function runTask(prompt, onEvent, signal, useContext = false, accessToken = '', demoTask = '') {
+  const response = await fetch(demoTask ? '/demo/stream' : '/api/chat/stream', {
     method: 'POST', headers: { 'Content-Type': 'application/json', ...(accessToken ? {Authorization: `Bearer ${accessToken}`} : {}) },
-    body: JSON.stringify(useContext ? { prompt, use_context: true } : { prompt }), signal,
+    body: JSON.stringify(demoTask ? {task: demoTask} : useContext ? { prompt, use_context: true } : { prompt }), signal,
   });
   if (response.status === 401) throw new Error('Enter the workspace access token to continue.');
+  if (demoTask && !response.ok) {
+    const problem = await response.json().catch(() => ({}));
+    throw new Error(typeof problem.detail === 'string' ? problem.detail : 'The public demo is unavailable. Please try later.');
+  }
   if (!response.ok) throw new Error(`The request failed (${response.status}). Check the backend and try again.`);
   if (!response.headers.get('content-type')?.includes('text/event-stream')) {
     throw new Error('The backend returned an unexpected response.');

@@ -77,3 +77,12 @@ it('explains access-token failures',async()=>{
   const fetchMock=vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response('',{status:401}));
   try {await expect(runTask('hello',()=>{})).rejects.toThrow('workspace access token');} finally {fetchMock.mockRestore();}
 });
+
+it('public requests send only a preset ID and surface the server limit message',async()=>{
+  const fetchMock=vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response(JSON.stringify({detail:'You have used today’s demo runs.'}),{status:429,headers:{'content-type':'application/json'}}));
+  try {
+    await expect(runTask('',()=>{},undefined,false,'','csv')).rejects.toThrow('today’s demo runs');
+    expect(fetchMock).toHaveBeenCalledWith('/demo/stream',expect.objectContaining({body:'{"task":"csv"}'}));
+    expect(fetchMock.mock.calls[0][1].headers.Authorization).toBeUndefined();
+  } finally {fetchMock.mockRestore();}
+});

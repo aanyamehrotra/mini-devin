@@ -93,15 +93,15 @@ def run_agent(user_prompt: str, *, use_context: bool = False):
     return agent_result(state)
 
 
-async def stream_agent(user_prompt: str, *, cancelled=None, use_context: bool = False):
+async def stream_agent(user_prompt: str, *, cancelled=None, use_context: bool = False, max_attempts: int = MAX_RETRIES):
     """Stream completed stages and a terminal result; cancel between stages.
 
     Synchronous provider/executor calls already running cannot be forcibly stopped.
     """
     state = {'user_prompt': user_prompt, 'attempts': [], 'use_context': use_context}
-    updates = build_graph(MAX_RETRIES).astream(
+    updates = build_graph(max_attempts).astream(
         state, stream_mode='updates',
-        config={'recursion_limit': 3 * MAX_RETRIES + 3},
+        config={'recursion_limit': 3 * max_attempts + 3},
     )
     try:
         while True:

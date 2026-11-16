@@ -13,3 +13,17 @@ class GroqConfigurationTests(unittest.TestCase):
             self.assertEqual(constructor.call_args.kwargs['timeout'],30)
             self.assertEqual(constructor.call_args.kwargs['max_retries'],0)
             self.assertEqual(constructor.return_value.chat.completions.create.call_args.kwargs['model'],'configured-model')
+
+    def test_public_demo_caps_output_and_does_not_retry_provider_calls(self):
+        from app.services.demo_policy import public_demo
+        marker=public_demo.set(True)
+        try:
+            with patch('app.services.llm.groq.Groq') as constructor:
+                constructor.return_value.chat.completions.create.side_effect=RuntimeError('provider unavailable')
+                with self.assertRaises(RuntimeError):
+                    GroqLLM().generate('hello')
+                create=constructor.return_value.chat.completions.create
+                self.assertEqual(create.call_count,1)
+                self.assertEqual(create.call_args.kwargs['max_tokens'],4096)
+        finally:
+            public_demo.reset(marker)
