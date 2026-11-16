@@ -42,6 +42,8 @@ def create_app(frontend_dir=None):
     application.include_router(context_router, prefix='/api')
     if (root / 'assets').is_dir():
         application.mount('/assets', StaticFiles(directory=root / 'assets'), name='frontend-assets')
+    if (root / 'showcases').is_dir():
+        application.mount('/showcases', StaticFiles(directory=root / 'showcases'), name='public-showcases')
     return application
 
 

@@ -1,0 +1,98 @@
+{
+  "id": "csv-quality",
+  "title": "CSV quality audit",
+  "recorded_at": "2026-11-16T13:07:10.563202+00:00",
+  "provenance": "Recorded live model generation and actual Docker execution using public fixture data. Independently checked against expected stdout and required files. This is a saved run, not a new model request.",
+  "result": {
+    "plan": {
+      "goal": "Implement a CSV quality checker that counts rows, duplicate IDs, and missing cells",
+      "features": [
+        "Count data rows",
+        "Detect duplicate IDs beyond first occurrence",
+        "Count blank cells across all columns"
+      ],
+      "files": [
+        "main.py"
+      ],
+      "technologies": [
+        "Python"
+      ],
+      "steps": [
+        "Define the inline CSV string exactly as provided.",
+        "Parse the CSV using csv.reader from the standard library.",
+        "Iterate over rows to count total rows, track IDs to find duplicates, and count blank cells.",
+        "Print the results in the exact format: Rows: 4, Duplicate IDs: 1, Missing cells: 2."
+      ]
+    },
+    "code": {
+      "files": [
+        {
+          "path": "main.py",
+          "content": "import csv\nimport io\n\nCSV_DATA = \"id,name,email\\n1,Ada,ada@example.com\\n2,Sam,\\n2,Sam,sam@example.com\\n3,,lee@example.com\\n\"\n\ndef main():\n    reader = csv.reader(io.StringIO(CSV_DATA))\n    header = next(reader, None)\n    rows = 0\n    duplicate_ids = 0\n    missing_cells = 0\n    seen_ids = set()\n    for row in reader:\n        rows += 1\n        id_value = row[0]\n        if id_value in seen_ids:\n            duplicate_ids += 1\n        else:\n            seen_ids.add(id_value)\n        missing_cells += sum(1 for cell in row if cell == \"\")\n    print(f\"Rows: {rows}\")\n    print(f\"Duplicate IDs: {duplicate_ids}\")\n    print(f\"Missing cells: {missing_cells}\")\n\nif __name__ == \"__main__\":\n    main()\n"
+        }
+      ]
+    },
+    "execution": {
+      "success": true,
+      "stdout": "Rows: 4\nDuplicate IDs: 1\nMissing cells: 2\n",
+      "stderr": "WARNING: Error loading config file: open /root/.docker/config.json: permission denied\n",
+      "exit_code": 0,
+      "execution_time": 1.223,
+      "error_type": null
+    },
+    "review": {
+      "success": true,
+      "feedback": "The script correctly implements the requested CSV quality checker, counts rows, duplicate IDs, and missing cells, and outputs the expected three lines.",
+      "failure_source": null
+    },
+    "attempts": [
+      {
+        "attempt": 1,
+        "code": {
+          "files": [
+            {
+              "path": "main.py",
+              "content": "import csv\nimport io\n\nCSV_DATA = \"id,name,email\\n1,Ada,ada@example.com\\n2,Sam,\\n2,Sam,sam@example.com\\n3,,lee@example.com\\n\"\n\ndef main():\n    reader = csv.reader(io.StringIO(CSV_DATA))\n    header = next(reader, None)\n    rows = 0\n    duplicate_ids = 0\n    missing_cells = 0\n    seen_ids = set()\n    for row in reader:\n        rows += 1\n        id_value = row[0]\n        if id_value in seen_ids:\n            duplicate_ids += 1\n        else:\n            seen_ids.add(id_value)\n        missing_cells += sum(1 for cell in row if cell == \"\")\n    print(f\"Rows: {rows}\")\n    print(f\"Duplicate IDs: {duplicate_ids}\")\n    print(f\"Missing cells: {missing_cells}\")\n\nif __name__ == \"__main__\":\n    main()\n"
+            }
+          ]
+        },
+        "execution": {
+          "success": true,
+          "stdout": "Rows: 4\nDuplicate IDs: 1\nMissing cells: 2\n",
+          "stderr": "WARNING: Error loading config file: open /root/.docker/config.json: permission denied\n",
+          "exit_code": 0,
+          "execution_time": 1.223,
+          "error_type": null
+        },
+        "review": {
+          "success": true,
+          "feedback": "The script correctly implements the requested CSV quality checker, counts rows, duplicate IDs, and missing cells, and outputs the expected three lines.",
+          "failure_source": null
+        },
+        "success": true
+      }
+    ],
+    "timings": [
+      {
+        "stage": "plan",
+        "attempt": 1,
+        "duration_ms": 809
+      },
+      {
+        "stage": "generate",
+        "attempt": 1,
+        "duration_ms": 2806
+      },
+      {
+        "stage": "execute",
+        "attempt": 1,
+        "duration_ms": 1223
+      },
+      {
+        "stage": "review",
+        "attempt": 1,
+        "duration_ms": 877
+      }
+    ]
+  }
+}

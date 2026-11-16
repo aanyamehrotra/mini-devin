@@ -1,6 +1,7 @@
 """LangGraph orchestration for bounded, review-driven project generation."""
 
 from typing import TypedDict
+import time
 from app.memory.context import retrieve_context
 
 from app.agents.planner import plan_task
@@ -21,6 +22,7 @@ class AgentState(TypedDict, total=False):
     execution: ExecutionResult
     review: ReviewResult
     attempts: list[dict]
+    timings: list[dict]
 
 
 def build_graph(max_attempts: int = MAX_RETRIES):
@@ -74,9 +76,17 @@ def build_graph(max_attempts: int = MAX_RETRIES):
         return 'generate'
 
     graph = StateGraph(AgentState)
+    def measured(name, function):
+        def node(state):
+            started = time.perf_counter()
+            changes = function(state)
+            timing = {'stage': name, 'attempt': len(state['attempts']) + 1,
+                      'duration_ms': round((time.perf_counter() - started) * 1000)}
+            return {**changes, 'timings': [*state.get('timings', []), timing]}
+        return node
     for name, function in [('plan', plan), ('generate', generate),
                            ('execute', execute), ('review', review)]:
-        graph.add_node(name, RunnableLambda(function))
+        graph.add_node(name, RunnableLambda(measured(name, function)))
     graph.add_edge(START, 'plan')
     graph.add_edge('plan', 'generate')
     graph.add_edge('generate', 'execute')
@@ -115,6 +125,8 @@ async def stream_agent(user_prompt: str, *, cancelled=None, use_context: bool = 
             for stage, changes in update.items():
                 state.update(changes)
                 data = {'stage': stage, 'status': 'completed'}
+                if state.get('timings'):
+                    data['duration_ms'] = state['timings'][-1]['duration_ms']
                 if stage != 'plan':
                     data['attempt'] = len(state['attempts']) + (stage != 'review')
                 yield {'event': 'stage', 'data': data}
@@ -128,6 +140,7 @@ async def stream_agent(user_prompt: str, *, cancelled=None, use_context: bool = 
 
 def agent_result(state):
     result = {key: state[key] for key in ('plan', 'code', 'execution', 'review', 'attempts')}
+    result['timings'] = state.get('timings', [])
     if state.get('context') is not None:
         result['context'] = state['context']
     return result

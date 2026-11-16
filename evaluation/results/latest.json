@@ -1,0 +1,546 @@
+{
+  "recorded_at": "2026-11-16T13:07:10.563202+00:00",
+  "provider": "groq",
+  "model": "openai/gpt-oss-20b",
+  "dataset": "evaluation/tasks.json",
+  "pause_between_tasks_seconds": 60,
+  "method": "Exact stdout, successful execution and required files; reviewer approval is reported separately.",
+  "scope": "Five small fixed tasks, one run per task; not a general coding benchmark.",
+  "summary": {
+    "tasks": 5,
+    "passed": 5,
+    "success_rate": 1.0,
+    "median_seconds": 4.756,
+    "total_attempts": 5
+  },
+  "cases": [
+    {
+      "id": "fibonacci",
+      "title": "Fibonacci sequence",
+      "passed": true,
+      "checks": {
+        "execution_succeeded": true,
+        "stdout_matches": true,
+        "required_files_present": true
+      },
+      "attempts": 1,
+      "review_approved": true,
+      "result": {
+        "plan": {
+          "goal": "Create main.py that prints exactly the first 10 Fibonacci numbers starting with 0 and 1, separated by spaces, on one line.",
+          "features": [
+            "Print first 10 Fibonacci numbers"
+          ],
+          "files": [
+            "main.py"
+          ],
+          "technologies": [
+            "Python"
+          ],
+          "steps": [
+            "Define a list to store Fibonacci numbers",
+            "Generate the first 10 Fibonacci numbers",
+            "Print the numbers joined by spaces"
+          ]
+        },
+        "code": {
+          "files": [
+            {
+              "path": "main.py",
+              "content": "def main():\n    fib_numbers = [0, 1]\n    while len(fib_numbers) < 10:\n        fib_numbers.append(fib_numbers[-1] + fib_numbers[-2])\n    print(\" \".join(str(num) for num in fib_numbers))\n\nif __name__ == \"__main__\":\n    main()"
+            }
+          ]
+        },
+        "execution": {
+          "success": true,
+          "stdout": "0 1 1 2 3 5 8 13 21 34\n",
+          "stderr": "WARNING: Error loading config file: open /root/.docker/config.json: permission denied\n",
+          "exit_code": 0,
+          "execution_time": 1.203,
+          "error_type": null
+        },
+        "review": {
+          "success": true,
+          "feedback": "The script correctly prints the first 10 Fibonacci numbers as requested.",
+          "failure_source": null
+        },
+        "attempts": [
+          {
+            "attempt": 1,
+            "code": {
+              "files": [
+                {
+                  "path": "main.py",
+                  "content": "def main():\n    fib_numbers = [0, 1]\n    while len(fib_numbers) < 10:\n        fib_numbers.append(fib_numbers[-1] + fib_numbers[-2])\n    print(\" \".join(str(num) for num in fib_numbers))\n\nif __name__ == \"__main__\":\n    main()"
+                }
+              ]
+            },
+            "execution": {
+              "success": true,
+              "stdout": "0 1 1 2 3 5 8 13 21 34\n",
+              "stderr": "WARNING: Error loading config file: open /root/.docker/config.json: permission denied\n",
+              "exit_code": 0,
+              "execution_time": 1.203,
+              "error_type": null
+            },
+            "review": {
+              "success": true,
+              "feedback": "The script correctly prints the first 10 Fibonacci numbers as requested.",
+              "failure_source": null
+            },
+            "success": true
+          }
+        ],
+        "timings": [
+          {
+            "stage": "plan",
+            "attempt": 1,
+            "duration_ms": 1081
+          },
+          {
+            "stage": "generate",
+            "attempt": 1,
+            "duration_ms": 1236
+          },
+          {
+            "stage": "execute",
+            "attempt": 1,
+            "duration_ms": 1203
+          },
+          {
+            "stage": "review",
+            "attempt": 1,
+            "duration_ms": 679
+          }
+        ]
+      },
+      "seconds": 4.756
+    },
+    {
+      "id": "csv-quality",
+      "title": "CSV quality audit",
+      "passed": true,
+      "checks": {
+        "execution_succeeded": true,
+        "stdout_matches": true,
+        "required_files_present": true
+      },
+      "attempts": 1,
+      "review_approved": true,
+      "result": {
+        "plan": {
+          "goal": "Implement a CSV quality checker that counts rows, duplicate IDs, and missing cells",
+          "features": [
+            "Count data rows",
+            "Detect duplicate IDs beyond first occurrence",
+            "Count blank cells across all columns"
+          ],
+          "files": [
+            "main.py"
+          ],
+          "technologies": [
+            "Python"
+          ],
+          "steps": [
+            "Define the inline CSV string exactly as provided.",
+            "Parse the CSV using csv.reader from the standard library.",
+            "Iterate over rows to count total rows, track IDs to find duplicates, and count blank cells.",
+            "Print the results in the exact format: Rows: 4, Duplicate IDs: 1, Missing cells: 2."
+          ]
+        },
+        "code": {
+          "files": [
+            {
+              "path": "main.py",
+              "content": "import csv\nimport io\n\nCSV_DATA = \"id,name,email\\n1,Ada,ada@example.com\\n2,Sam,\\n2,Sam,sam@example.com\\n3,,lee@example.com\\n\"\n\ndef main():\n    reader = csv.reader(io.StringIO(CSV_DATA))\n    header = next(reader, None)\n    rows = 0\n    duplicate_ids = 0\n    missing_cells = 0\n    seen_ids = set()\n    for row in reader:\n        rows += 1\n        id_value = row[0]\n        if id_value in seen_ids:\n            duplicate_ids += 1\n        else:\n            seen_ids.add(id_value)\n        missing_cells += sum(1 for cell in row if cell == \"\")\n    print(f\"Rows: {rows}\")\n    print(f\"Duplicate IDs: {duplicate_ids}\")\n    print(f\"Missing cells: {missing_cells}\")\n\nif __name__ == \"__main__\":\n    main()\n"
+            }
+          ]
+        },
+        "execution": {
+          "success": true,
+          "stdout": "Rows: 4\nDuplicate IDs: 1\nMissing cells: 2\n",
+          "stderr": "WARNING: Error loading config file: open /root/.docker/config.json: permission denied\n",
+          "exit_code": 0,
+          "execution_time": 1.223,
+          "error_type": null
+        },
+        "review": {
+          "success": true,
+          "feedback": "The script correctly implements the requested CSV quality checker, counts rows, duplicate IDs, and missing cells, and outputs the expected three lines.",
+          "failure_source": null
+        },
+        "attempts": [
+          {
+            "attempt": 1,
+            "code": {
+              "files": [
+                {
+                  "path": "main.py",
+                  "content": "import csv\nimport io\n\nCSV_DATA = \"id,name,email\\n1,Ada,ada@example.com\\n2,Sam,\\n2,Sam,sam@example.com\\n3,,lee@example.com\\n\"\n\ndef main():\n    reader = csv.reader(io.StringIO(CSV_DATA))\n    header = next(reader, None)\n    rows = 0\n    duplicate_ids = 0\n    missing_cells = 0\n    seen_ids = set()\n    for row in reader:\n        rows += 1\n        id_value = row[0]\n        if id_value in seen_ids:\n            duplicate_ids += 1\n        else:\n            seen_ids.add(id_value)\n        missing_cells += sum(1 for cell in row if cell == \"\")\n    print(f\"Rows: {rows}\")\n    print(f\"Duplicate IDs: {duplicate_ids}\")\n    print(f\"Missing cells: {missing_cells}\")\n\nif __name__ == \"__main__\":\n    main()\n"
+                }
+              ]
+            },
+            "execution": {
+              "success": true,
+              "stdout": "Rows: 4\nDuplicate IDs: 1\nMissing cells: 2\n",
+              "stderr": "WARNING: Error loading config file: open /root/.docker/config.json: permission denied\n",
+              "exit_code": 0,
+              "execution_time": 1.223,
+              "error_type": null
+            },
+            "review": {
+              "success": true,
+              "feedback": "The script correctly implements the requested CSV quality checker, counts rows, duplicate IDs, and missing cells, and outputs the expected three lines.",
+              "failure_source": null
+            },
+            "success": true
+          }
+        ],
+        "timings": [
+          {
+            "stage": "plan",
+            "attempt": 1,
+            "duration_ms": 809
+          },
+          {
+            "stage": "generate",
+            "attempt": 1,
+            "duration_ms": 2806
+          },
+          {
+            "stage": "execute",
+            "attempt": 1,
+            "duration_ms": 1223
+          },
+          {
+            "stage": "review",
+            "attempt": 1,
+            "duration_ms": 877
+          }
+        ]
+      },
+      "seconds": 5.727
+    },
+    {
+      "id": "log-analyzer",
+      "title": "Multi-file log analyser",
+      "passed": true,
+      "checks": {
+        "execution_succeeded": true,
+        "stdout_matches": true,
+        "required_files_present": true
+      },
+      "attempts": 1,
+      "review_approved": true,
+      "result": {
+        "plan": {
+          "goal": "Count log levels in a list of log messages and print formatted results.",
+          "features": [
+            "Summarize log levels",
+            "Print formatted counts"
+          ],
+          "files": [
+            "main.py",
+            "analyzer.py"
+          ],
+          "technologies": [
+            "Python"
+          ],
+          "steps": [
+            "Create analyzer.py with a summarize function that counts first words of log messages.",
+            "Create main.py that imports summarize, defines the five log strings, calls summarize, and prints the counts in the order INFO, WARN, ERROR.",
+            "Run main.py to produce the expected three lines of output."
+          ]
+        },
+        "code": {
+          "files": [
+            {
+              "path": "analyzer.py",
+              "content": "def summarize(logs):\n    counts = {}\n    for log in logs:\n        level = log.split()[0]\n        counts[level] = counts.get(level, 0) + 1\n    return counts"
+            },
+            {
+              "path": "main.py",
+              "content": "from analyzer import summarize\n\n\ndef main():\n    logs = [\n        \"INFO started\",\n        \"ERROR timeout\",\n        \"WARN retry\",\n        \"ERROR database\",\n        \"INFO recovered\"\n    ]\n    counts = summarize(logs)\n    print(f\"INFO: {counts.get('INFO', 0)}\")\n    print(f\"WARN: {counts.get('WARN', 0)}\")\n    print(f\"ERROR: {counts.get('ERROR', 0)}\")\n\n\nif __name__ == \"__main__\":\n    main()"
+            }
+          ]
+        },
+        "execution": {
+          "success": true,
+          "stdout": "INFO: 2\nWARN: 1\nERROR: 2\n",
+          "stderr": "WARNING: Error loading config file: open /root/.docker/config.json: permission denied\n",
+          "exit_code": 0,
+          "execution_time": 1.894,
+          "error_type": null
+        },
+        "review": {
+          "success": true,
+          "feedback": "The project meets all requirements and runs correctly.",
+          "failure_source": null
+        },
+        "attempts": [
+          {
+            "attempt": 1,
+            "code": {
+              "files": [
+                {
+                  "path": "analyzer.py",
+                  "content": "def summarize(logs):\n    counts = {}\n    for log in logs:\n        level = log.split()[0]\n        counts[level] = counts.get(level, 0) + 1\n    return counts"
+                },
+                {
+                  "path": "main.py",
+                  "content": "from analyzer import summarize\n\n\ndef main():\n    logs = [\n        \"INFO started\",\n        \"ERROR timeout\",\n        \"WARN retry\",\n        \"ERROR database\",\n        \"INFO recovered\"\n    ]\n    counts = summarize(logs)\n    print(f\"INFO: {counts.get('INFO', 0)}\")\n    print(f\"WARN: {counts.get('WARN', 0)}\")\n    print(f\"ERROR: {counts.get('ERROR', 0)}\")\n\n\nif __name__ == \"__main__\":\n    main()"
+                }
+              ]
+            },
+            "execution": {
+              "success": true,
+              "stdout": "INFO: 2\nWARN: 1\nERROR: 2\n",
+              "stderr": "WARNING: Error loading config file: open /root/.docker/config.json: permission denied\n",
+              "exit_code": 0,
+              "execution_time": 1.894,
+              "error_type": null
+            },
+            "review": {
+              "success": true,
+              "feedback": "The project meets all requirements and runs correctly.",
+              "failure_source": null
+            },
+            "success": true
+          }
+        ],
+        "timings": [
+          {
+            "stage": "plan",
+            "attempt": 1,
+            "duration_ms": 1759
+          },
+          {
+            "stage": "generate",
+            "attempt": 1,
+            "duration_ms": 1357
+          },
+          {
+            "stage": "execute",
+            "attempt": 1,
+            "duration_ms": 1895
+          },
+          {
+            "stage": "review",
+            "attempt": 1,
+            "duration_ms": 711
+          }
+        ]
+      },
+      "seconds": 5.741
+    },
+    {
+      "id": "average-fix",
+      "title": "Repair an average calculation",
+      "passed": true,
+      "checks": {
+        "execution_succeeded": true,
+        "stdout_matches": true,
+        "required_files_present": true
+      },
+      "attempts": 1,
+      "review_approved": true,
+      "result": {
+        "plan": {
+          "goal": "Repair average function and demonstrate with assertions",
+          "features": [
+            "average function returns float division",
+            "handle empty list",
+            "assertions for test cases",
+            "print result"
+          ],
+          "files": [
+            "main.py"
+          ],
+          "technologies": [
+            "Python"
+          ],
+          "steps": [
+            "Define average function with float division and empty list handling",
+            "Add assertions for average([1,2]) == 1.5 and average([]) == 0.0",
+            "Print exactly \"Average: 1.5\""
+          ]
+        },
+        "code": {
+          "files": [
+            {
+              "path": "main.py",
+              "content": "def average(values):\n    if not values:\n        return 0.0\n    return sum(values) / len(values)\n\nassert average([1, 2]) == 1.5\nassert average([]) == 0.0\n\nprint(\"Average: 1.5\")"
+            }
+          ]
+        },
+        "execution": {
+          "success": true,
+          "stdout": "Average: 1.5\n",
+          "stderr": "WARNING: Error loading config file: open /root/.docker/config.json: permission denied\n",
+          "exit_code": 0,
+          "execution_time": 1.246,
+          "error_type": null
+        },
+        "review": {
+          "success": true,
+          "feedback": "The code meets all requested requirements and executed correctly.",
+          "failure_source": null
+        },
+        "attempts": [
+          {
+            "attempt": 1,
+            "code": {
+              "files": [
+                {
+                  "path": "main.py",
+                  "content": "def average(values):\n    if not values:\n        return 0.0\n    return sum(values) / len(values)\n\nassert average([1, 2]) == 1.5\nassert average([]) == 0.0\n\nprint(\"Average: 1.5\")"
+                }
+              ]
+            },
+            "execution": {
+              "success": true,
+              "stdout": "Average: 1.5\n",
+              "stderr": "WARNING: Error loading config file: open /root/.docker/config.json: permission denied\n",
+              "exit_code": 0,
+              "execution_time": 1.246,
+              "error_type": null
+            },
+            "review": {
+              "success": true,
+              "feedback": "The code meets all requested requirements and executed correctly.",
+              "failure_source": null
+            },
+            "success": true
+          }
+        ],
+        "timings": [
+          {
+            "stage": "plan",
+            "attempt": 1,
+            "duration_ms": 1565
+          },
+          {
+            "stage": "generate",
+            "attempt": 1,
+            "duration_ms": 1053
+          },
+          {
+            "stage": "execute",
+            "attempt": 1,
+            "duration_ms": 1246
+          },
+          {
+            "stage": "review",
+            "attempt": 1,
+            "duration_ms": 590
+          }
+        ]
+      },
+      "seconds": 4.465
+    },
+    {
+      "id": "group-totals",
+      "title": "Group transaction totals",
+      "passed": true,
+      "checks": {
+        "execution_succeeded": true,
+        "stdout_matches": true,
+        "required_files_present": true
+      },
+      "attempts": 1,
+      "review_approved": true,
+      "result": {
+        "plan": {
+          "goal": "Sum amounts by category and print results",
+          "features": [
+            "sum amounts by category",
+            "print sorted categories",
+            "assert total sum"
+          ],
+          "files": [
+            "main.py"
+          ],
+          "technologies": [
+            "Python"
+          ],
+          "steps": [
+            "Define the data list",
+            "Aggregate amounts and print sorted results",
+            "Assert that the total sum equals 27"
+          ]
+        },
+        "code": {
+          "files": [
+            {
+              "path": "main.py",
+              "content": "data = [('books',12),('food',8),('books',5),('food',2)]\n\n# Aggregate amounts by category\ntotals = {}\nfor cat, amt in data:\n    totals[cat] = totals.get(cat, 0) + amt\n\n# Print sorted results\nfor cat in sorted(totals):\n    print(f\"{cat}: {totals[cat]}\")\n\n# Assert total sum\nassert sum(totals.values()) == 27\n"
+            }
+          ]
+        },
+        "execution": {
+          "success": true,
+          "stdout": "books: 17\nfood: 10\n",
+          "stderr": "WARNING: Error loading config file: open /root/.docker/config.json: permission denied\n",
+          "exit_code": 0,
+          "execution_time": 1.23,
+          "error_type": null
+        },
+        "review": {
+          "success": true,
+          "feedback": "The code correctly aggregates, sorts, prints the results, and asserts the total.",
+          "failure_source": null
+        },
+        "attempts": [
+          {
+            "attempt": 1,
+            "code": {
+              "files": [
+                {
+                  "path": "main.py",
+                  "content": "data = [('books',12),('food',8),('books',5),('food',2)]\n\n# Aggregate amounts by category\ntotals = {}\nfor cat, amt in data:\n    totals[cat] = totals.get(cat, 0) + amt\n\n# Print sorted results\nfor cat in sorted(totals):\n    print(f\"{cat}: {totals[cat]}\")\n\n# Assert total sum\nassert sum(totals.values()) == 27\n"
+                }
+              ]
+            },
+            "execution": {
+              "success": true,
+              "stdout": "books: 17\nfood: 10\n",
+              "stderr": "WARNING: Error loading config file: open /root/.docker/config.json: permission denied\n",
+              "exit_code": 0,
+              "execution_time": 1.23,
+              "error_type": null
+            },
+            "review": {
+              "success": true,
+              "feedback": "The code correctly aggregates, sorts, prints the results, and asserts the total.",
+              "failure_source": null
+            },
+            "success": true
+          }
+        ],
+        "timings": [
+          {
+            "stage": "plan",
+            "attempt": 1,
+            "duration_ms": 703
+          },
+          {
+            "stage": "generate",
+            "attempt": 1,
+            "duration_ms": 1118
+          },
+          {
+            "stage": "execute",
+            "attempt": 1,
+            "duration_ms": 1230
+          },
+          {
+            "stage": "review",
+            "attempt": 1,
+            "duration_ms": 399
+          }
+        ]
+      },
+      "seconds": 3.463
+    }
+  ]
+}

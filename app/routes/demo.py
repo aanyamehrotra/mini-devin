@@ -21,15 +21,18 @@ from pydantic import BaseModel, ConfigDict
 from app.agents.manager import stream_agent
 from app.services.demo_policy import public_demo
 from app.services.llm.structured import AgentResponseError
+from app.evaluation.runner import tasks
 
 router = APIRouter(prefix='/demo')
 TASKS = {
     'fibonacci': 'Create main.py that prints exactly the first 10 Fibonacci numbers starting with 0 and 1, separated by spaces, on one line. Standard library only, no dependencies, no input or networking.',
     'csv': 'Create main.py using only the Python standard library. Parse the inline CSV string "name,score\\nAanya,80\\nSam,90\\nLee,100\\n" with csv.DictReader and print exactly "Average score: 90.0". No input, external files, networking or dependencies.',
 }
+TASKS.update({task['id']: task['prompt'] for task in tasks() if task['id'] in {'csv-quality', 'log-analyzer', 'average-fix'}})
 DAILY_TOTAL = 20
 DAILY_VISITOR = 3
 COOLDOWN = 60
+GLOBAL_COOLDOWN = 60
 LEASE_SECONDS = 600
 
 
@@ -74,7 +77,7 @@ def _reserve(visitor):
         active = db.execute('SELECT started FROM active WHERE slot=1').fetchone()
         if active and now - active[0] < LEASE_SECONDS:
             raise HTTPException(429, 'The demo is helping another visitor. Try again shortly.', headers={'Retry-After': '30'})
-        total = db.execute('SELECT COALESCE(SUM(count),0) FROM quota WHERE day=?', (day,)).fetchone()[0]
+        total, last_global = db.execute('SELECT COALESCE(SUM(count),0),MAX(last) FROM quota WHERE day=?', (day,)).fetchone()
         row = db.execute('SELECT count,last FROM quota WHERE day=? AND visitor=?', (day, visitor)).fetchone()
         if total >= DAILY_TOTAL:
             raise HTTPException(429, 'Today’s demo limit has been reached. Please try tomorrow.', headers={'Retry-After': '3600'})
@@ -82,6 +85,8 @@ def _reserve(visitor):
             raise HTTPException(429, 'You’ve used today’s three demo runs. Please try tomorrow.', headers={'Retry-After': '3600'})
         if row and now - row[1] < COOLDOWN:
             raise HTTPException(429, 'Please wait a minute between demo runs.', headers={'Retry-After': str(max(1, int(COOLDOWN - (now - row[1]))))})
+        if last_global and now - last_global < GLOBAL_COOLDOWN:
+            raise HTTPException(429, 'The live demo is cooling down to respect free model limits. Explore a completed project while you wait.', headers={'Retry-After': str(max(1, int(GLOBAL_COOLDOWN - (now-last_global))))})
         ticket = uuid.uuid4().hex
         db.execute('INSERT OR REPLACE INTO active VALUES (1,?,?)', (ticket, now))
         db.execute('INSERT INTO quota VALUES (?,?,1,?) ON CONFLICT(day,visitor) DO UPDATE SET count=count+1,last=excluded.last', (day, visitor, now))

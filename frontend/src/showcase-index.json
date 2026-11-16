@@ -1,0 +1,26 @@
+[
+  {
+    "id": "csv-quality",
+    "title": "Audit a messy CSV",
+    "tag": "DATA QUALITY",
+    "description": "Find missing cells and duplicate records in a reproducible dataset.",
+    "detail": "CSV parsing · exact output checks",
+    "icon": "▦"
+  },
+  {
+    "id": "log-analyzer",
+    "title": "Build across files",
+    "tag": "MULTI-FILE PROJECT",
+    "description": "Trace how an entry point and an analysis module work together.",
+    "detail": "Module imports · sandboxed execution",
+    "icon": "⌘"
+  },
+  {
+    "id": "repair",
+    "title": "Watch a bug get fixed",
+    "tag": "FAILURE → REPAIR",
+    "description": "Inspect a failing assertion, the model’s correction, and the code diff.",
+    "detail": "Seeded bug · real model repair",
+    "icon": "↗"
+  }
+]

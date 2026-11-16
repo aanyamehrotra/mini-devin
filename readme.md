@@ -4,34 +4,54 @@ An autonomous Python coding workspace: describe a task, follow planning/code/
 execution/review stages, inspect generated files and retry attempts, and reload
 completed runs later.
 
-## Hosted application
+[![Checks](https://github.com/aanyamehrotra/mini-devin/actions/workflows/checks.yml/badge.svg)](https://github.com/aanyamehrotra/mini-devin/actions/workflows/checks.yml)
 
-**[Open Mini-Devin](https://mini-devin-13-55-65-113.sslip.io)**
+**[Open the live application](https://mini-devin-13-55-65-113.sslip.io)** ·
+[Architecture](docs/ARCHITECTURE.md) · [Evaluation](docs/EVALUATION.md) ·
+[Short demo video](docs/media/demo.mp4)
 
-Hosted on AWS in Sydney (`ap-southeast-2`). Visitors can run two real Python
-examples **without signing in or entering a token**. Demo access is limited to
-three runs per visitor/network per UTC day, twenty shared runs per UTC day,
-one active demo at a time, and a minute between runs. Limits survive service
-restarts; failed and disconnected attempts count too.
+![Mini-Devin developer workspace](docs/media/preview.jpg)
 
-For full access, **ask the project owner for a workspace access token**, then
-[open the private workspace](https://mini-devin-13-55-65-113.sslip.io/workspace).
-Custom prompts and saved history remain token protected. Public demo results
-are never added to private history. Provider keys and the workspace token are
-not published. See [public demo setup and limits](docs/PUBLIC_DEMO.md).
+## Explore it in a minute
 
-Verified on November 16, 2026: trusted HTTPS, production UI/assets, Docker readiness,
-unauthorized-request rejection, a real Groq → planner/coder → Docker → reviewer
-streamed run, and saved-result reload.
+- **Audit a CSV:** inspect missing values and duplicate-record checks.
+- **Follow a multi-file build:** see an entry point import its analysis module.
+- **Watch a repair:** compare a deliberately seeded failure with a real model rewrite,
+  actual Docker rerun and review.
 
-This deployment uses Free plan credits, not permanently free compute. The project
-was verified as `FREE / ACTIVE` with US$100 remaining credits before provisioning;
-its plan expires May 16, 2027, or earlier if credits run out. No Paid plan upgrade
-was performed. AWS closes the Free plan project when its free period or credits
-end. See [AWS Free plan terms](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/free-tier-plans.html).
+Recorded walkthroughs are clearly labelled, need no token and make no model calls.
+They remain available when live quota is exhausted. The code viewer includes a file
+explorer, Python highlighting, plan view, attempt diffs, copy and ZIP downloads,
+an execution console and stage timings. A [short walkthrough](docs/media/demo.mp4)
+shows the same real interface.
 
-The free `sslip.io` hostname depends on the server's current public IP. A stop/start
-can change that IP and require a hostname/configuration update.
+## Live access and cost boundary
+
+Visitors can run preset Python tasks without signing in. Limits: three attempts per
+network per UTC day, twenty shared attempts per day, one active public run and a
+one-minute shared cooldown. For full access, **ask the project owner for a workspace
+access token**, then [open the private workspace](https://mini-devin-13-55-65-113.sslip.io/workspace).
+Custom prompts and saved runs remain token protected. Public demo runs are not
+added to owner history; credentials are never published.
+
+Hosted on an existing dedicated EC2 server in Sydney (`ap-southeast-2`). The AWS
+project was verified `FREE / ACTIVE` with promotional credits; no Paid plan upgrade
+was performed. This is credit-backed hosting, not permanently free compute. The
+Free plan ends when credits run out or on its expiry date, May 16, 2027. See
+[AWS plan terms](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/free-tier-plans.html).
+The free hostname follows the current public IP; a stop/start can require updating it.
+
+## Evidence and engineering
+
+The benchmark uses independent expected stdout, exit status and required-file
+checks. Reviewer approval is reported separately. See [methodology and recorded
+reports](docs/EVALUATION.md). It covers five small fixed tasks, not general coding
+accuracy. A separate recorded repair starts with an explicitly seeded bug.
+
+[GitHub Actions](https://github.com/aanyamehrotra/mini-devin/actions) runs backend,
+frontend, ZIP/SSE, production-build and actual Docker checks with no model or AWS
+credentials. [Architecture and trust boundaries](docs/ARCHITECTURE.md) describe
+cancellation semantics, retry bounds, access protection and operational limits.
 
 ## Run locally
 
@@ -64,6 +84,7 @@ access. Provider keys stay in the backend; do not put them in the browser.
 ## Guides and verification
 
 - [Provider configuration](docs/PROVIDERS.md)
+- [Architecture](docs/ARCHITECTURE.md), [evaluation](docs/EVALUATION.md), and [portfolio guide](docs/PORTFOLIO.md)
 - [Frontend](docs/FRONTEND.md) and [streaming API](docs/STREAMING.md)
 - [Saved history](docs/HISTORY.md)
 - [Retrieval and context data sharing](docs/RETRIEVAL.md)

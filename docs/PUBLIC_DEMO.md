@@ -48,3 +48,17 @@ proxy headers from public clients.
 Disable the public endpoint with MINI_DEVIN_PUBLIC_DEMO=0 and restart the service.
 A normal frontend build without VITE_PUBLIC_DEMO preserves local workspace behavior.
 The AWS project remains on its Free plan; no new infrastructure is required.
+
+## Portfolio walkthroughs
+
+The public page offers three explicitly recorded examples without using any live
+quota: a CSV quality audit, a multi-file log analyser and a seeded bug repair.
+These contain only public fixtures, source and actual execution results. The repair
+recording identifies its seeded first failure. Visitors can inspect files, compare
+attempts, review timings, copy code and download a safe ZIP. No owner history is
+used to populate these recordings.
+
+Live presets also include the CSV audit, log analysis and average fix. Shared live
+requests have a one-minute global cooldown to respect the free provider's token
+rate limit, in addition to the existing daily/per-network and concurrency limits.
+A cooldown or quota failure points visitors to the always-available walkthroughs.

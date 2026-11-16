@@ -85,3 +85,14 @@ is baked into the build. See [deployment setup](DEPLOYMENT.md) for authenticatio
 preflight and private-host templates. Current frontend suite: 20 passing tests.
 
 See [saved-run retention and privacy](HISTORY.md) for archive behavior. Current UI suite: 21 tests.
+
+## Portfolio workspace update
+
+The public entry page presents three recorded walkthroughs before the live form.
+Results render in a file explorer/editor/console layout with Python highlighting,
+plan view, per-attempt diffs, copy and validated ZIP downloads. Live stage events
+include measured durations and the page shows elapsed waiting time. The UI supports
+390px mobile layouts, keyboard focus indicators, a skip link and reduced motion.
+Recordings are explicitly labelled; they never imply a fresh model invocation.
+The embedded 30-second visual walkthrough is assembled from captured app views;
+it is not a continuous live-generation recording. Private owner history is separate.

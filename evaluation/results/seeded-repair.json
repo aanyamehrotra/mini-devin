@@ -1,0 +1,122 @@
+{
+  "id": "repair",
+  "title": "Repair a failing average calculation",
+  "recorded_at": "2026-11-16T13:08:15.088578+00:00",
+  "provenance": "Recorded demonstration: a deliberately seeded bug, real model rewrite, actual Docker executions, and model review. Not an unseeded success-rate measurement.",
+  "result": {
+    "plan": {
+      "goal": "Repair a failing average calculation",
+      "features": [
+        "Fractional averages",
+        "Empty-list handling",
+        "Regression assertions"
+      ],
+      "files": [
+        "main.py"
+      ],
+      "technologies": [
+        "Python standard library"
+      ],
+      "steps": [
+        "Reproduce the assertion failure",
+        "Repair with model feedback",
+        "Execute and review the correction"
+      ]
+    },
+    "code": {
+      "files": [
+        {
+          "path": "main.py",
+          "content": "def average(values):\n    if not values:\n        return 0.0\n    return sum(values) / len(values)\n\nassert average([1, 2]) == 1.5\nassert average([]) == 0.0\nprint(f\"Average: {average([1, 2])}\")\n"
+        }
+      ]
+    },
+    "execution": {
+      "success": true,
+      "stdout": "Average: 1.5\n",
+      "stderr": "",
+      "exit_code": 0,
+      "execution_time": 1.274,
+      "error_type": null
+    },
+    "review": {
+      "success": true,
+      "feedback": "All requirements satisfied.",
+      "failure_source": null
+    },
+    "attempts": [
+      {
+        "attempt": 1,
+        "code": {
+          "files": [
+            {
+              "path": "main.py",
+              "content": "def average(values):\n    return sum(values) // len(values)\n\nassert average([1, 2]) == 1.5\nassert average([]) == 0.0\nprint(f\"Average: {average([1, 2])}\")\n"
+            }
+          ]
+        },
+        "execution": {
+          "success": false,
+          "stdout": "",
+          "stderr": "Traceback (most recent call last):\n  File \"/tmp/project/./main.py\", line 4, in <module>\n    assert average([1, 2]) == 1.5\n           ^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n",
+          "exit_code": 1,
+          "execution_time": 1.237,
+          "error_type": null
+        },
+        "review": {
+          "success": false,
+          "feedback": "Seeded regression: integer division discards fractions. Preserve fractional averages and handle empty lists. Both assertions must pass.",
+          "failure_source": "code"
+        },
+        "success": false
+      },
+      {
+        "attempt": 2,
+        "code": {
+          "files": [
+            {
+              "path": "main.py",
+              "content": "def average(values):\n    if not values:\n        return 0.0\n    return sum(values) / len(values)\n\nassert average([1, 2]) == 1.5\nassert average([]) == 0.0\nprint(f\"Average: {average([1, 2])}\")\n"
+            }
+          ]
+        },
+        "execution": {
+          "success": true,
+          "stdout": "Average: 1.5\n",
+          "stderr": "",
+          "exit_code": 0,
+          "execution_time": 1.274,
+          "error_type": null
+        },
+        "review": {
+          "success": true,
+          "feedback": "All requirements satisfied.",
+          "failure_source": null
+        },
+        "success": true
+      }
+    ],
+    "timings": [
+      {
+        "stage": "execute",
+        "attempt": 1,
+        "duration_ms": 1237
+      },
+      {
+        "stage": "generate",
+        "attempt": 2,
+        "duration_ms": 770
+      },
+      {
+        "stage": "execute",
+        "attempt": 2,
+        "duration_ms": 1274
+      },
+      {
+        "stage": "review",
+        "attempt": 2,
+        "duration_ms": 590
+      }
+    ]
+  }
+}

@@ -27,7 +27,7 @@ class OrchestrationTests(unittest.TestCase):
 
     def test_first_attempt_success_preserves_response_shape(self):
         result = manager.run_agent('hello')
-        self.assertEqual(set(result), {'plan', 'code', 'execution', 'review', 'attempts'})
+        self.assertEqual(set(result), {'plan', 'code', 'execution', 'review', 'attempts', 'timings'})
         self.assertEqual(len(result['attempts']), 1)
         self.assertTrue(result['attempts'][0]['success'])
         self.mocks['rewrite_code'].assert_not_called()

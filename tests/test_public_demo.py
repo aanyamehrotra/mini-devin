@@ -26,6 +26,9 @@ class DemoTests(unittest.TestCase):
             'MINI_DEVIN_HISTORY_DB': str(Path(self.folder.name) / 'private.sqlite3'),
         })
         self.env.start()
+        self.pacing = patch.object(demo, 'GLOBAL_COOLDOWN', 0)
+        self.pacing.start()
+        self.addCleanup(self.pacing.stop)
         self.addCleanup(self.env.stop)
 
     def test_disabled_demo_and_missing_owner_token_fail_closed(self):
@@ -125,3 +128,10 @@ class DemoTests(unittest.TestCase):
                 worker.join(3)
             self.assertFalse(worker.is_alive())
         demo._release(demo._reserve('second'))
+
+    def test_global_cooldown_applies_across_networks(self):
+        with patch.object(demo, 'GLOBAL_COOLDOWN', 60), patch.object(demo.time, 'time', return_value=100000):
+            demo._release(demo._reserve('first-network'))
+            with self.assertRaises(HTTPException) as limit:
+                demo._reserve('second-network')
+            self.assertIn('cooling down', limit.exception.detail)
