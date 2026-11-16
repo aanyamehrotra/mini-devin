@@ -59,13 +59,11 @@ describe('SSE reader', () => {
 
 describe('HTTP contract', () => {
   it('posts prompt to the same-origin proxy and consumes SSE', async () => {
-    const fetchMock = vi
-      .spyOn(globalThis, 'fetch')
-      .mockResolvedValue(
-        new Response(body([bytes(frame('cancelled', { reason: 'client_disconnected' }))]), {
-          headers: { 'content-type': 'text/event-stream' },
-        })
-      );
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(body([bytes(frame('cancelled', { reason: 'client_disconnected' }))]), {
+        headers: { 'content-type': 'text/event-stream' },
+      })
+    );
     const receive = vi.fn();
     try {
       await runTask('hello', receive);
@@ -97,13 +95,11 @@ describe('HTTP contract', () => {
 });
 
 it('includes context opt-in only when requested', async () => {
-  const fetchMock = vi
-    .spyOn(globalThis, 'fetch')
-    .mockResolvedValue(
-      new Response(body([bytes(frame('cancelled', { reason: 'client_disconnected' }))]), {
-        headers: { 'content-type': 'text/event-stream' },
-      })
-    );
+  const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+    new Response(body([bytes(frame('cancelled', { reason: 'client_disconnected' }))]), {
+      headers: { 'content-type': 'text/event-stream' },
+    })
+  );
   try {
     await runTask('hello', () => {}, undefined, true);
     expect(fetchMock).toHaveBeenCalledWith(
@@ -116,13 +112,11 @@ it('includes context opt-in only when requested', async () => {
 });
 
 it('sends the workspace token only as an authorization header', async () => {
-  const fetchMock = vi
-    .spyOn(globalThis, 'fetch')
-    .mockResolvedValue(
-      new Response(body([bytes(frame('cancelled', { reason: 'client_disconnected' }))]), {
-        headers: { 'content-type': 'text/event-stream' },
-      })
-    );
+  const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+    new Response(body([bytes(frame('cancelled', { reason: 'client_disconnected' }))]), {
+      headers: { 'content-type': 'text/event-stream' },
+    })
+  );
   try {
     await runTask('hello', () => {}, undefined, false, 'workspace-fixture');
     const options = fetchMock.mock.calls[0][1];
@@ -145,14 +139,12 @@ it('explains access-token failures', async () => {
 });
 
 it('public requests send only a preset ID and surface the server limit message', async () => {
-  const fetchMock = vi
-    .spyOn(globalThis, 'fetch')
-    .mockResolvedValue(
-      new Response(JSON.stringify({ detail: 'You have used today’s demo runs.' }), {
-        status: 429,
-        headers: { 'content-type': 'application/json' },
-      })
-    );
+  const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+    new Response(JSON.stringify({ detail: 'You have used today’s demo runs.' }), {
+      status: 429,
+      headers: { 'content-type': 'application/json' },
+    })
+  );
   try {
     await expect(runTask('', () => {}, undefined, false, '', 'csv')).rejects.toThrow(
       'today’s demo runs'
