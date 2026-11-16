@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="330" viewBox="0 0 1200 330" role="img" aria-label="Mini-Devin: from a prompt to a project you can inspect">
+<defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#17271c"/><stop offset="1" stop-color="#0c1510"/></linearGradient></defs>
+<rect width="1200" height="330" rx="18" fill="url(#bg)"/>
+<g fill="none" stroke="#304a30" opacity=".45"><path d="M700 0v330M800 0v330M900 0v330M1000 0v330M1100 0v330M600 65h600M600 165h600M600 265h600"/></g>
+<rect x="48" y="43" width="54" height="54" rx="14" fill="#bee79c"/><text x="58" y="82" fill="#142314" font-family="Arial,sans-serif" font-size="40" font-weight="700">m·</text>
+<text x="120" y="80" fill="#e4efdc" font-family="Arial,sans-serif" font-size="38" font-weight="700">mini-devin</text>
+<text x="49" y="158" fill="#eef4e9" font-family="Arial,sans-serif" font-size="42" font-weight="700">From a prompt to a project</text>
+<text x="49" y="210" fill="#bee79c" font-family="Arial,sans-serif" font-size="42" font-weight="700">you can inspect.</text>
+<text x="51" y="266" fill="#9db493" font-family="Arial,sans-serif" font-size="16">PLAN  →  BUILD  →  RUN  →  REVIEW  →  HAND OFF</text>
+<g font-family="monospace" font-size="13"><rect x="785" y="75" width="355" height="180" rx="12" fill="#101b13" stroke="#4c6b3d"/><circle cx="806" cy="96" r="4" fill="#bee79c"/><text x="822" y="101" fill="#9fb48f">observable execution</text><text x="808" y="139" fill="#c3dfa9">✓ project files generated</text><text x="808" y="172" fill="#c3dfa9">✓ sandbox execution completed</text><text x="808" y="205" fill="#c3dfa9">↗ review, edit, export</text><text x="808" y="234" fill="#718b66">Python · LangGraph · Docker</text></g>
+</svg>

@@ -35,7 +35,7 @@ executor separately serializes generated-code execution within one process.
 
 - HTTPS terminates at Caddy; FastAPI and Caddy's admin API are loopback bound.
 - The owner token gates custom prompts, retrieval and every saved-history route.
-- Public API bodies accept only known example IDs. Context search and history are
+- Public API bodies accept known example IDs or a custom prompt capped at 1,000 characters. Context search and history are
   not exposed. Requests reserve a persistent per-network/global allowance first.
 - Generated code sees read-only source, no host environment secrets, bounded
   scratch space and no runtime network. CPU, memory, processes, output and time
@@ -71,5 +71,5 @@ permanently free compute. Keep usage caps and avoid upgrading to Paid while the
 
 There is no OAuth, multi-tenant history, distributed execution or durable graph
 resume. Cancellation occurs between stages; an SDK call already running may finish.
-The public presets deliberately limit what can be submitted. CI runs offline tests
+The public path bounds prompt length, retries, dependencies and usage. CI runs offline tests
 and real Docker checks without provider secrets; live model evaluation is opt-in.

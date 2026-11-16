@@ -3,8 +3,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from './App.jsx';
-import { runTask, savedRuns } from './stream.js';
-vi.mock('./stream.js', () => ({ runTask: vi.fn(), savedRuns: vi.fn() }));
+import { runTask, savedRuns, executeProject } from './stream.js';
+vi.mock('./stream.js', () => ({ runTask: vi.fn(), savedRuns: vi.fn(), executeProject: vi.fn() }));
 
 const code = {
   files: [
@@ -177,7 +177,7 @@ it('public demo needs no token, shows limits on selection/run, and hides private
     render(<App />);
     expect(screen.queryByText('Workspace access')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Load saved runs' })).toBeNull();
-    await user.selectOptions(screen.getByLabelText('Choose an example'), 'csv');
+    await user.selectOptions(screen.getByLabelText('Start from'), 'csv');
     expect(screen.getByRole('alert').textContent).toContain('Demo access is limited');
     await user.click(screen.getByRole('button', { name: /Run live demo/ }));
     expect(runTask.mock.calls[0][5]).toBe('csv');
@@ -245,4 +245,66 @@ it('copies the selected source file', async () => {
   await user.click(screen.getByRole('button', { name: 'Copy file' }));
   expect(await navigator.clipboard.readText()).toBe('print("hello")');
   expect(screen.getByText('File copied.')).toBeTruthy();
+});
+
+it('lets visitors write a custom program under the public request limits', async () => {
+  vi.stubEnv('VITE_PUBLIC_DEMO', 'true');
+  try {
+    runTask.mockImplementation(async (prompt, onEvent) =>
+      onEvent({
+        type: 'complete',
+        data: { success: true, result: { ...result, public_demo: true } },
+      })
+    );
+    const user = userEvent.setup();
+    render(<App />);
+    expect(screen.getByRole('button', { name: /Build my project/ }).disabled).toBe(true);
+    expect(screen.getByLabelText('Your task').maxLength).toBe(1000);
+    await user.type(
+      screen.getByLabelText('Your task'),
+      'Create an expense summary with sample transactions'
+    );
+    await user.click(screen.getByRole('button', { name: /Build my project/ }));
+    expect(runTask.mock.calls[0][0]).toContain('expense summary');
+    expect(runTask.mock.calls[0][5]).toBe('custom');
+  } finally {
+    vi.unstubAllEnvs();
+  }
+});
+it('adds and edits browser files, then exposes the GitHub handoff', async () => {
+  runTask.mockImplementation(async (prompt, onEvent) =>
+    onEvent({ type: 'complete', data: { success: true, result } })
+  );
+  const user = await start();
+  await user.type(screen.getByLabelText('New file path'), 'utils.py');
+  await user.click(screen.getByRole('button', { name: '+ Add file' }));
+  await user.type(screen.getByLabelText('Edit file contents'), 'answer = 7');
+  expect(screen.getByText(/console below still shows the last executed version/)).toBeTruthy();
+  await user.click(screen.getByRole('button', { name: /Export to GitHub/ }));
+  expect(screen.getByRole('region', { name: 'GitHub export' })).toBeTruthy();
+  expect(screen.getByLabelText('Repository')).toBeTruthy();
+});
+it('owner can run edits without pretending they were AI reviewed', async () => {
+  runTask.mockImplementation(async (prompt, onEvent) =>
+    onEvent({ type: 'complete', data: { success: true, result } })
+  );
+  executeProject.mockResolvedValue({
+    code: { files: [{ path: 'main.py', content: 'print(7)' }] },
+    execution: { ...execution, stdout: '7' },
+    review: {
+      feedback: 'Manual execution only. No AI review was requested.',
+      mode: 'not_requested',
+    },
+    success: true,
+    duration_ms: 100,
+  });
+  const user = await start();
+  await user.click(screen.getByRole('button', { name: 'Edit files' }));
+  await user.clear(screen.getByLabelText('Edit file contents'));
+  await user.type(screen.getByLabelText('Edit file contents'), 'print(7)');
+  await user.click(screen.getByRole('button', { name: 'Run edited project' }));
+  expect(
+    await screen.findByText('Manual execution only. No AI review was requested.')
+  ).toBeTruthy();
+  expect(executeProject).toHaveBeenCalledOnce();
 });

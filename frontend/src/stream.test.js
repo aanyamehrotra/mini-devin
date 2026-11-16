@@ -158,3 +158,20 @@ it('public requests send only a preset ID and surface the server limit message',
     fetchMock.mockRestore();
   }
 });
+
+it('sends a bounded custom prompt through the public quota endpoint', async () => {
+  const mock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+    new Response(body([bytes(frame('cancelled', {}))]), {
+      headers: { 'content-type': 'text/event-stream' },
+    })
+  );
+  try {
+    await runTask('Create an expense summary', () => {}, undefined, false, '', 'custom');
+    expect(mock).toHaveBeenCalledWith(
+      '/demo/stream',
+      expect.objectContaining({ body: '{"task":"custom","prompt":"Create an expense summary"}' })
+    );
+  } finally {
+    mock.mockRestore();
+  }
+});

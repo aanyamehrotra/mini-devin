@@ -65,7 +65,13 @@ export async function runTask(
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     },
     body: JSON.stringify(
-      demoTask ? { task: demoTask } : useContext ? { prompt, use_context: true } : { prompt }
+      demoTask
+        ? demoTask === 'custom'
+          ? { task: 'custom', prompt }
+          : { task: demoTask }
+        : useContext
+          ? { prompt, use_context: true }
+          : { prompt }
     ),
     signal,
   });
@@ -98,6 +104,24 @@ export async function savedRuns(accessToken = '', identifier = '') {
       response.status === 401
         ? 'Enter the workspace access token to view saved runs.'
         : 'Saved runs could not be loaded.'
+    );
+  return response.json();
+}
+
+export async function executeProject(files, accessToken = '') {
+  const response = await fetch('/api/projects/execute', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+    body: JSON.stringify({ files }),
+  });
+  if (!response.ok)
+    throw new Error(
+      response.status === 401
+        ? 'Open the full workspace and enter its access token to run edited code.'
+        : 'The edited project could not be executed.'
     );
   return response.json();
 }

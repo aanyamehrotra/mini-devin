@@ -16,7 +16,7 @@ import uuid
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.agents.manager import stream_agent
 from app.services.demo_policy import public_demo
@@ -39,6 +39,16 @@ LEASE_SECONDS = 600
 class DemoRequest(BaseModel):
     model_config = ConfigDict(extra='forbid')
     task: str
+    prompt: str | None = Field(default=None, max_length=1000)
+
+    @model_validator(mode='after')
+    def custom_prompt_only(self):
+        if self.task == 'custom':
+            if not self.prompt or not self.prompt.strip():
+                raise ValueError('Describe the Python program you want to build')
+        elif self.prompt is not None:
+            raise ValueError('Preset tasks do not accept a custom prompt')
+        return self
 
 
 def _enabled():
@@ -105,11 +115,17 @@ def _release(ticket):
         db.close()
 
 
-def _work(task, ticket, messages):
+def _work(task, ticket, messages, prompt=None):
     async def run():
         marker = public_demo.set(True)
         try:
-            async for item in stream_agent(TASKS[task], max_attempts=1):
+            user_prompt = TASKS[task] if task != 'custom' else (
+                'Build a small runnable Python project using only the standard library. '
+                'Use main.py as its entry point. No dependencies, input(), networking, '
+                'credentials, or external services. Include safe inline sample data '
+                'and print useful output so the program can run without interaction. '
+                'The user request is:\n' + prompt.strip())
+            async for item in stream_agent(user_prompt, max_attempts=1):
                 # No retrieval, archive writes, run IDs or other visitors' data.
                 if item['event'] == 'complete':
                     item['data']['result']['public_demo'] = True
@@ -131,14 +147,14 @@ def _work(task, ticket, messages):
 @router.post('/stream')
 async def demo_stream(body: DemoRequest, request: Request):
     _enabled()
-    if body.task not in TASKS:
+    if body.task not in TASKS and body.task != 'custom':
         raise HTTPException(422, 'Choose one of the demo examples')
     try:
         ticket = _reserve(_visitor(request))
     except sqlite3.Error:
         raise HTTPException(503, 'Demo quota checks are unavailable. Please try later.') from None
     messages = queue.Queue(maxsize=8)
-    worker = threading.Thread(target=_work, args=(body.task, ticket, messages), daemon=True)
+    worker = threading.Thread(target=_work, args=(body.task, ticket, messages, body.prompt), daemon=True)
     try:
         worker.start()
     except RuntimeError:

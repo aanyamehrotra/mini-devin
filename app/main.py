@@ -7,6 +7,7 @@ from app.routes.chat import router as chat_router
 from app.routes.context import router as context_router
 from app.routes.runs import router as runs_router
 from app.routes.demo import router as demo_router
+from app.routes.projects import router as projects_router
 from app.services.access import BearerGuard
 from app.services.readiness import readiness
 
@@ -35,6 +36,7 @@ def create_app(frontend_dir=None):
 
     application.include_router(runs_router)
     application.include_router(demo_router)
+    application.include_router(projects_router)
     application.include_router(runs_router,prefix='/api')
     application.include_router(chat_router)
     application.include_router(context_router)

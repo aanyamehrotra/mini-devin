@@ -96,3 +96,12 @@ include measured durations and the page shows elapsed waiting time. The UI suppo
 Recordings are explicitly labelled; they never imply a fresh model invocation.
 The embedded 30-second visual walkthrough is assembled from captured app views;
 it is not a continuous live-generation recording. Private owner history is separate.
+
+## Project studio
+
+Custom creation is the default public action, with a 1,000-character prompt cap
+and the same quota as presets. Every result exposes reversible browser file
+editing/add/remove, ZIP download and an offline GitHub export handoff. The full
+workspace surfaces its access controls before the composer and can run edits via
+/api/projects/execute. The response explicitly records that no AI review occurred;
+manual edits/runs do not overwrite the original archive entry.

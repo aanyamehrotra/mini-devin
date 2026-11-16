@@ -2,7 +2,9 @@ import { useMemo, useState } from 'react';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-python';
 import { diffLines } from 'diff';
-import { downloadProject } from './project.js';
+import { downloadProject, projectZip } from './project.js';
+import { executeProject } from './stream.js';
+import GitHubPanel from './GitHubPanel.jsx';
 
 function tokens(nodes) {
   return nodes.map((node, i) =>
@@ -73,14 +75,54 @@ function Changes({ before, after }) {
   );
 }
 
-export default function Result({ result }) {
+export default function Result({ result, accessToken = '', canExecute = false, onResult }) {
   const [attemptIndex, setAttemptIndex] = useState(result.attempts.length - 1);
   const [filePath, setFilePath] = useState('');
   const [tab, setTab] = useState('code');
   const [toast, setToast] = useState('');
+  const [editing, setEditing] = useState(false);
+  const [edits, setEdits] = useState({});
+  const [github, setGithub] = useState(false);
+  const [running, setRunning] = useState(false);
+  const [extraFiles, setExtraFiles] = useState({});
+  const [removedFiles, setRemovedFiles] = useState({});
+  const [newPath, setNewPath] = useState('');
   const attempt = result.attempts[attemptIndex];
   const execution = attempt?.execution || result.execution;
-  const files = (attempt?.code || result.code)?.files || [];
+  const originalFiles = (attempt?.code || result.code)?.files || [];
+  const files = [...originalFiles, ...(extraFiles[attemptIndex] || [])]
+    .filter((file) => !(removedFiles[attemptIndex] || []).includes(file.path))
+    .map((file) => ({ ...file, content: edits[`${attemptIndex}:${file.path}`] ?? file.content }));
+  const dirty =
+    files.length !== originalFiles.length ||
+    files.some(
+      (file) =>
+        file.content !== originalFiles.find((original) => original.path === file.path)?.content
+    );
+  function addFile(event) {
+    event.preventDefault();
+    const path = newPath.trim();
+    try {
+      if (
+        [...originalFiles, ...(extraFiles[attemptIndex] || [])].some((file) => file.path === path)
+      )
+        throw new Error(
+          'That path already exists in this attempt. Reset project edits to restore removed files.'
+        );
+      projectZip([...files, { path, content: '' }]);
+      setExtraFiles((previous) => ({
+        ...previous,
+        [attemptIndex]: [...(previous[attemptIndex] || []), { path, content: '' }],
+      }));
+      setFilePath(path);
+      setNewPath('');
+      setEditing(true);
+      setTab('code');
+      setToast('File added to your browser copy.');
+    } catch (error) {
+      setToast(error.message);
+    }
+  }
   const file = files.find((f) => f.path === filePath) || files[0] || { path: '', content: '' };
   const previousFiles = result.attempts[attemptIndex - 1]?.code?.files || [];
   const changedPaths = [...new Set([...previousFiles, ...files].map((f) => f.path))].filter(
@@ -99,6 +141,39 @@ export default function Result({ result }) {
       setToast('File copied.');
     } catch {
       setToast('Clipboard unavailable. Select the code to copy it.');
+    }
+  }
+  async function runEdits() {
+    setRunning(true);
+    setToast('Running the edited project in Docker…');
+    try {
+      const next = await executeProject(files, accessToken);
+      const number = result.attempts.length + 1;
+      const updated = {
+        ...result,
+        ...next,
+        manual_run: true,
+        ui_key: result.ui_key || result.run_id || result.plan?.goal,
+        run_id: undefined,
+        attempts: [...result.attempts, { ...next, attempt: number }],
+        timings: [
+          ...(result.timings || []),
+          { stage: 'manual execute', attempt: number, duration_ms: next.duration_ms },
+        ],
+      };
+      setAttemptIndex(number - 1);
+      setEdits({});
+      setExtraFiles({});
+      setRemovedFiles({});
+      setEditing(false);
+      onResult?.(updated);
+      setToast(
+        'Edited files executed. This manual run did not call the model or replace saved history.'
+      );
+    } catch (error) {
+      setToast(error.message);
+    } finally {
+      setRunning(false);
     }
   }
   return (
@@ -125,6 +200,51 @@ export default function Result({ result }) {
         </span>
       </div>
       {result.provenance && <p className="provenance">{result.provenance}</p>}
+      <div className="project-actions">
+        <button
+          type="button"
+          onClick={() => {
+            setEditing((value) => !value);
+            setTab('code');
+          }}
+        >
+          {editing ? 'View code' : 'Edit files'}
+        </button>
+        <button type="button" onClick={() => setGithub((value) => !value)}>
+          Export to GitHub ↗
+        </button>
+        <span>
+          {files.length} files · {result.attempts.length} attempts ·{' '}
+          {result.recorded ? 'recorded' : 'live result'}
+        </span>
+      </div>
+      <div className="file-operations">
+        <button
+          type="button"
+          disabled={running || files.length < 2}
+          onClick={() => {
+            setRemovedFiles((previous) => ({
+              ...previous,
+              [attemptIndex]: [...(previous[attemptIndex] || []), file.path],
+            }));
+            setToast('File removed from the browser copy. Reset project edits to restore it.');
+          }}
+        >
+          Remove selected file
+        </button>
+        <button
+          type="button"
+          disabled={running || !dirty}
+          onClick={() => {
+            setEdits({});
+            setExtraFiles({});
+            setRemovedFiles({});
+            setToast('Original generated files restored.');
+          }}
+        >
+          Reset project edits
+        </button>
+      </div>
       <div className="attempts">
         <label htmlFor="attempt">Attempt</label>
         <select
@@ -133,6 +253,7 @@ export default function Result({ result }) {
           onChange={(e) => {
             setAttemptIndex(Number(e.target.value));
             setToast('');
+            setEditing(false);
           }}
         >
           {result.attempts.map((a, i) => (
@@ -150,6 +271,19 @@ export default function Result({ result }) {
           <div className="pane-title">
             PROJECT FILES <span>{files.length}</span>
           </div>
+          <form className="new-file" onSubmit={addFile}>
+            <input
+              aria-label="New file path"
+              placeholder="helpers.py"
+              value={newPath}
+              maxLength={200}
+              disabled={running}
+              onChange={(e) => setNewPath(e.target.value)}
+            />
+            <button type="submit" disabled={running || !newPath.trim()}>
+              + Add file
+            </button>
+          </form>
           <div className="files" role="group" aria-label="Generated files">
             {files.map((f) => (
               <button
@@ -211,9 +345,53 @@ export default function Result({ result }) {
             <>
               <div className="file-title">
                 {file.path || 'No file selected'}
-                <span>read only</span>
+                <span>{editing ? 'browser editor' : dirty ? 'edited copy' : 'read only'}</span>
               </div>
-              <Code text={file.content} path={file.path} />
+              {editing ? (
+                <textarea
+                  className="source-editor"
+                  aria-label="Edit file contents"
+                  value={file.content}
+                  maxLength={262144}
+                  disabled={running}
+                  spellCheck={false}
+                  onChange={(e) =>
+                    setEdits((previous) => ({
+                      ...previous,
+                      [`${attemptIndex}:${file.path}`]: e.target.value,
+                    }))
+                  }
+                />
+              ) : (
+                <Code text={file.content} path={file.path} />
+              )}
+              {dirty && (
+                <div className="edit-notice">
+                  <p>
+                    Unsaved browser edits. The console below still shows the last executed version.
+                  </p>
+                  {canExecute ? (
+                    <button type="button" disabled={running} onClick={runEdits}>
+                      {running ? 'Running…' : 'Run edited project'}
+                    </button>
+                  ) : (
+                    <a href="/workspace">Ask for a workspace token to run edited files ↗</a>
+                  )}
+                  <button
+                    type="button"
+                    disabled={running}
+                    onClick={() =>
+                      setEdits((previous) => {
+                        const next = { ...previous };
+                        delete next[`${attemptIndex}:${file.path}`];
+                        return next;
+                      })
+                    }
+                  >
+                    Reset this file
+                  </button>
+                </div>
+              )}
             </>
           )}
           {tab === 'changes' &&
@@ -263,6 +441,7 @@ export default function Result({ result }) {
           {toast}
         </p>
       )}
+      {github && <GitHubPanel files={files} />}
       <div className="terminal">
         <div className="pane-title">
           <span>

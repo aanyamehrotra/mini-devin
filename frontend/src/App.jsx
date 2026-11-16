@@ -22,6 +22,7 @@ const errorMessages = {
 };
 const examples = ['Print the first 10 Fibonacci numbers', 'Create a Python CSV summary tool'];
 const demoExamples = [
+  ['custom', 'Write my own Python project'],
   ['csv-quality', 'Audit missing cells and duplicate CSV records'],
   ['log-analyzer', 'Generate a multi-file log analyser'],
   ['average-fix', 'Fix an average calculation'],
@@ -32,7 +33,7 @@ const demoExamples = [
 export default function App() {
   const demo =
     import.meta.env.VITE_PUBLIC_DEMO === 'true' && window.location.pathname !== '/workspace';
-  const [demoTask, setDemoTask] = useState('csv-quality');
+  const [demoTask, setDemoTask] = useState('custom');
   const [prompt, setPrompt] = useState('');
   const [history, setHistory] = useState([]);
   const [useContext, setUseContext] = useState(false);
@@ -66,7 +67,7 @@ export default function App() {
 
   async function submit(event) {
     event.preventDefault();
-    if (busy || (!demo && !prompt.trim())) return;
+    if (busy || ((!demo || demoTask === 'custom') && !prompt.trim())) return;
     const request = new AbortController();
     controller.current = request;
     setStatus('running');
@@ -149,12 +150,15 @@ export default function App() {
             </span>
             mini-devin
           </a>
-          <div className="workspace-label">{demo ? 'PUBLIC DEMO' : 'WORKSPACE'}</div>
+          <div className="workspace-label">{demo ? 'PROJECT STUDIO' : 'OWNER WORKSPACE'}</div>
           <div className="nav-active">
-            <span>⌘</span> {demo ? 'Try Mini-Devin' : 'Build a project'}
+            <span>⌘</span> {demo ? 'Create a project' : 'Build a project'}
           </div>
           <nav className="sidebar-links" aria-label="Project links">
-            <a href="#engineering">Engineering notes ↗</a>
+            <a href="#project-composer">Create project</a>
+            <a href={demo ? '#examples' : '/#examples'}>Explore examples</a>
+            <a href="/workspace">Full workspace ↗</a>
+            <a href={demo ? '#engineering' : '/#engineering'}>Engineering notes ↗</a>
             <a href="https://github.com/aanyamehrotra/mini-devin" target="_blank" rel="noreferrer">
               Source on GitHub ↗
             </a>
@@ -192,7 +196,7 @@ export default function App() {
               </h1>
               <p>
                 {demo ? (
-                  'An observable AI coding workspace. Follow the plan, inspect the files, and see what actually happened when the code ran.'
+                  'Describe your own Python program. Mini-Devin plans it, writes the files, runs the code, and reviews the result. Inspect every step, then take the project with you.'
                 ) : (
                   <>
                     Describe a Python project. Follow the plan, inspect the code,
@@ -201,26 +205,14 @@ export default function App() {
                 )}
               </p>
             </div>
-            {demo && <Showcases onSelect={explore} busy={busy} />}
-            {result?.recorded && (
-              <div ref={resultAnchor}>
-                <Result key={result.plan?.goal} result={result} />
-              </div>
-            )}
-            {demo && (
-              <div className="live-heading">
-                <span className="eyebrow">WANT TO TRY IT YOURSELF?</span>
-                <h2>Run a fresh project</h2>
-                <p>A new generation using the real model and Docker. No sign-in needed.</p>
-              </div>
-            )}
             {demo && (
               <details className="demo-info">
                 <summary>Live demo access & limits</summary>
                 <p>
-                  Three runs per visitor each day, with twenty runs shared across the demo. One
-                  project runs at a time, with a one-minute shared cooldown for free model limits.
-                  Results are private to this page.
+                  Create your own small Python program or choose a preset. Three runs per visitor
+                  each day, with twenty runs shared across the demo. One project runs at a time,
+                  with a one-minute shared cooldown for free model limits. Results are private to
+                  this page.
                 </p>
                 <p>
                   For full access, ask the project owner for a workspace access token. Already have
@@ -228,62 +220,14 @@ export default function App() {
                 </p>
               </details>
             )}
-            <form onSubmit={submit} className="composer">
-              <label htmlFor="task">{demo ? 'Choose an example' : 'Your task'}</label>
-              {demo ? (
-                <select
-                  id="task"
-                  className="demo-select"
-                  value={demoTask}
-                  disabled={busy}
-                  onChange={(e) => {
-                    setDemoTask(e.target.value);
-                    setMessage(
-                      'Demo access is limited to these examples: three runs per visitor each day, twenty runs shared across all visitors, and one project at a time. For full access, ask the project owner for a workspace access token.'
-                    );
-                  }}
-                >
-                  {demoExamples.map(([id, label]) => (
-                    <option key={id} value={id}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <textarea
-                  id="task"
-                  placeholder="Build a Python tool that…"
-                  rows={4}
-                  value={prompt}
-                  disabled={busy}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  required
-                />
-              )}
-              <div className="composer-bottom">
-                <span>
-                  {demo
-                    ? 'Real AI generation and sandboxed execution.'
-                    : 'Be specific about the result you want.'}
-                </span>
-                {busy ? (
-                  <button
-                    type="button"
-                    className="stop"
-                    onClick={() => controller.current?.abort()}
-                  >
-                    Stop updates
-                  </button>
-                ) : (
-                  <button className="primary" type="submit" disabled={!demo && !prompt.trim()}>
-                    {demo ? 'Run live demo' : 'Build project'} <span>↗</span>
-                  </button>
-                )}
-              </div>
-            </form>
             {!demo && (
-              <>
-                <details className="access-settings">
+              <section className="owner-intro">
+                <h2>Your full workspace</h2>
+                <p>
+                  Create custom projects, use configured references, restore saved runs, edit files,
+                  run changes, and prepare GitHub exports. Enter your private workspace token below.
+                </p>{' '}
+                <details className="access-settings" open>
                   <summary>Workspace access</summary>
                   <label htmlFor="access-token">Workspace access token (if configured)</label>
                   <input
@@ -299,6 +243,83 @@ export default function App() {
                     you close or reload this page.
                   </p>
                 </details>
+              </section>
+            )}
+            <div className="capability-strip">
+              <span>01 Plan & build</span>
+              <span>02 Files & execution</span>
+              <span>03 Review & repair</span>
+              <span>04 GitHub handoff</span>
+            </div>
+            <form id="project-composer" onSubmit={submit} className="composer">
+              <label htmlFor={demo ? 'task' : 'custom-task'}>
+                {demo ? 'Start from' : 'Your task'}
+              </label>
+              {demo ? (
+                <select
+                  id="task"
+                  className="demo-select"
+                  value={demoTask}
+                  disabled={busy}
+                  onChange={(e) => {
+                    setDemoTask(e.target.value);
+                    setMessage(
+                      'Demo access is limited: custom Python programs and presets share three runs per visitor per day, twenty shared daily runs, and one active project. For full access, ask the project owner for a workspace access token.'
+                    );
+                  }}
+                >
+                  {demoExamples.map(([id, label]) => (
+                    <option key={id} value={id}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              ) : null}
+              {(!demo || demoTask === 'custom') && (
+                <textarea
+                  id="custom-task"
+                  aria-label="Your task"
+                  maxLength={demo ? 1000 : 20000}
+                  placeholder="Build a personal expense analyser that groups sample transactions by category, prints a monthly summary, and flags overspending…"
+                  rows={4}
+                  value={prompt}
+                  disabled={busy}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  required
+                />
+              )}
+              <div className="composer-bottom">
+                <span>
+                  {demo
+                    ? `${demoTask === 'custom' ? `${prompt.length}/1000 characters · ` : ''}Standard-library Python · sample inputs`
+                    : 'Be specific about the result you want.'}
+                </span>
+                {busy ? (
+                  <button
+                    type="button"
+                    className="stop"
+                    onClick={() => controller.current?.abort()}
+                  >
+                    Stop updates
+                  </button>
+                ) : (
+                  <button
+                    className="primary"
+                    type="submit"
+                    disabled={(!demo || demoTask === 'custom') && !prompt.trim()}
+                  >
+                    {demo
+                      ? demoTask === 'custom'
+                        ? 'Build my project'
+                        : 'Run live demo'
+                      : 'Build project'}{' '}
+                    <span>↗</span>
+                  </button>
+                )}
+              </div>
+            </form>
+            {!demo && (
+              <>
                 <label className="context-toggle">
                   <input
                     type="checkbox"
@@ -394,7 +415,13 @@ export default function App() {
             )}
             {result && !result.recorded && (
               <div ref={resultAnchor}>
-                <Result key={result.run_id || result.plan?.goal} result={result} />
+                <Result
+                  key={result.ui_key || result.run_id || result.plan?.goal}
+                  result={result}
+                  accessToken={accessToken}
+                  canExecute={!demo}
+                  onResult={setResult}
+                />
               </div>
             )}
             {!result && !busy && !message && (
@@ -412,6 +439,16 @@ export default function App() {
                     </>
                   )}
                 </p>
+              </div>
+            )}
+            {demo && (
+              <section id="examples">
+                <Showcases onSelect={explore} busy={busy} />
+              </section>
+            )}
+            {result?.recorded && (
+              <div ref={resultAnchor}>
+                <Result key={result.plan?.goal} result={result} />
               </div>
             )}
             {demo && <Engineering />}

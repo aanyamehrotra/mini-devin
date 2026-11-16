@@ -135,3 +135,21 @@ class DemoTests(unittest.TestCase):
             with self.assertRaises(HTTPException) as limit:
                 demo._reserve('second-network')
             self.assertIn('cooling down', limit.exception.detail)
+
+    def test_custom_program_uses_same_quota_and_no_history_or_context(self):
+        async def custom(prompt, **kwargs):
+            self.assertIn('standard library',prompt)
+            self.assertIn('Create an expense summary',prompt)
+            self.assertEqual(kwargs,{'max_attempts':1})
+            yield {'event':'complete','data':{'success':True,'result':{'attempts':[{'success':True}]}}}
+        with patch.object(demo,'stream_agent',custom),TestClient(create_app('/absent')) as client:
+            response=client.post('/demo/stream',json={'task':'custom','prompt':'Create an expense summary'})
+            self.assertEqual(response.status_code,200)
+            self.assertIn('public_demo',response.text)
+            self.assertEqual(client.post('/demo/stream',json={'task':'custom','prompt':'Another program'}).status_code,429)
+
+    def test_custom_request_bounds_and_no_context_or_repository_parameters(self):
+        with patch.object(demo,'_reserve') as reserve,TestClient(create_app('/absent')) as client:
+            for body in [{'task':'custom'}, {'task':'custom','prompt':'   '}, {'task':'custom','prompt':'x'*1001}, {'task':'custom','prompt':'hello','use_context':True}, {'task':'custom','prompt':'hello','repo':'secret/repo'}]:
+                self.assertEqual(client.post('/demo/stream',json=body).status_code,422)
+            reserve.assert_not_called()

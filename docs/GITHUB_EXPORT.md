@@ -2,7 +2,7 @@
 
 This is a local command-line integration for exporting reviewed generated files.
 It is separate from the agent loop: generation never publishes automatically.
-There is no unauthenticated write endpoint, browser token field or OAuth UI.
+There is no unauthenticated write endpoint, browser token field or OAuth UI. The web result panel now prepares an offline export handoff; actual publication remains in this CLI.
 
 ## Prepare input and repository scope
 
@@ -80,3 +80,12 @@ Git access and do not verify this product's token-based export integration.
 References: [Git trees](https://docs.github.com/en/rest/git/trees),
 [Git references](https://docs.github.com/en/rest/git/refs),
 [pull requests](https://docs.github.com/en/rest/pulls/pulls).
+
+## Web entry point
+
+Select **Export to GitHub** on any project result, enter the target repository and
+base branch, and choose **Preview GitHub export**. Review file names and sizes,
+then download mini-devin-result.json. Place it in your local Mini-Devin checkout
+and use the displayed offline-preview command. Only a deliberate CLI --apply
+request, with a configured repo-scoped token, publishes files. Browser drafts are
+included in this handoff; rerun/review changed code before publishing it.

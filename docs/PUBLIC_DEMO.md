@@ -1,14 +1,13 @@
 # Public portfolio demo
 
-The hosted root page is a no-token demo. Choose Fibonacci or a sample CSV summary,
-then Run live demo. The actual planner, coder, Docker executor and reviewer run;
+The hosted root page is a no-token demo. Write your own small Python program or choose a preset, then build it. The actual planner, coder, Docker executor and reviewer run;
 this is not a prerecorded result. The interface explains access limits when an
 example is selected or a run starts and tells visitors to ask the project owner
 for a workspace access token for full access.
 
 ## Boundaries
 
-- Server accepts only preset task IDs; arbitrary prompts and retrieval are rejected.
+- Server accepts known preset IDs or a custom prompt of at most 1,000 characters. Retrieval, repository parameters and extra request fields are rejected.
 - Three attempts per visitor network per UTC day, twenty attempts shared per day,
   one active demo, and a 60-second per-network cooldown. Shared networks share
   an allowance. IPv6 addresses are grouped by /64.
@@ -62,3 +61,16 @@ Live presets also include the CSV audit, log analysis and average fix. Shared li
 requests have a one-minute global cooldown to respect the free provider's token
 rate limit, in addition to the existing daily/per-network and concurrency limits.
 A cooldown or quota failure points visitors to the always-available walkthroughs.
+
+## Project studio and GitHub handoff
+
+The public entry page now leads with custom project creation. Public custom
+requests use the same persisted quotas and standard-library-only execution policy
+as presets. Browser editing, adding/removing files, resetting drafts and exporting
+a ZIP/JSON do not spend model quota. Running edited files is a separate owner-only
+API and cannot bypass the public quota. The UI marks output as stale while edits
+are pending. Manual owner execution is labelled as having no new AI review.
+
+Each result exposes an offline GitHub handoff: repository/base validation, a file
+manifest, export JSON and commands for the existing CLI. The browser never publishes
+to GitHub, asks for a GitHub token, or calls GitHub to create a repository.
